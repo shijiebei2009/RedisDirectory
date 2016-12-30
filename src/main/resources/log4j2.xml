@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--status的含义为是否记录log4j2本身的event信息，默认是OFF-->
+<Configuration status="OFF">
+    <Properties>
+        <!--自定义一些常量，之后使用${变量名}引用-->
+        <Property name="logFilePath">logs/</Property>
+        <Property name="logFileName">redis_directory</Property>
+    </Properties>
+    <Appenders>
+        <!--很直白，Console指定了结果输出到控制台-->
+        <Console name="ConsolePrint" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss z} %t %-5level %class{36} %L %M - %msg%xEx%n"/>
+        </Console>
+        <!--<File>输出结果到指定文件</File>-->
+        <!--<RollingFile>同样输出结果到指定文件，但是使用buffer，速度会快点</RollingFile>-->
+        <!--filePattern：表示当日志到达指定的大小或者时间，产生新日志时，旧日志的命名路径。-->
+        <!--PatternLayout：和log4j一样，指定输出日志的格式，append表示是否追加内容，值默认为true-->
+        <Routing name="RollingFileDebug_${thread:threadName}">
+            <Routes pattern="$${thread:threadName}">
+                <Route>
+                    <RollingFile name="RollingFileDebug_${thread:threadName}"
+                                 fileName="${logFilePath}/${logFileName}_${thread:threadName}_debug.log"
+                                 filePattern="${logFilePath}/$${date:yyyy-MM}/${logFileName}-%d{yyyy-MM-dd}-${thread:threadName}-debug_%i.log.gz">
+                        <PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss z} %-5level %class{36} %L %M - %msg%xEx%n"/>
+                        <!--注意，如果有多个ThresholdFilter，那么Filters标签是必须的-->
+                        <Filters>
+                            <!--首先需要过滤不符合的日志级别，把不需要的首先DENY掉，然后在ACCEPT需要的日志级别，次序不能颠倒-->
+                            <!--INFO及以上级别拒绝输出-->
+                            <ThresholdFilter level="INFO" onMatch="DENY" onMismatch="NEUTRAL"/>
+                            <!--只输出DEBUG级别信息-->
+                            <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <!--时间策略，每隔24小时产生新的日志文件-->
+                            <TimeBasedTriggeringPolicy/>
+                            <!--大小策略，每到30M时产生新的日志文件-->
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="RollingFileInfo_${thread:threadName}">
+            <Routes pattern="$${thread:threadName}">
+                <Route>
+                    <RollingFile name="RollingFileInfo_${thread:threadName}"
+                                 fileName="${logFilePath}/${logFileName}_${thread:threadName}_info.log"
+                                 filePattern="${logFilePath}/$${date:yyyy-MM}/${logFileName}-%d{yyyy-MM-dd}-${thread:threadName}-info_%i.log.gz">
+                        <Filters>
+                            <!--onMatch: Action to take when the filter matches. The default value is NEUTRAL-->
+                            <!--onMismatch:	Action to take when the filter does not match. The default value is DENY-->
+                            <!--级别在ERROR之上的都拒绝输出-->
+                            <!--在组合过滤器中，接受使用NEUTRAL（中立），被第一个过滤器接受的日志信息，会继续用后面的过滤器进行过滤，只有符合所有过滤器条件的日志信息，才会被最终写入日志文件-->
+                            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+                            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss z} %-5level %class{36} %L %M - %msg%xEx%n"/>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="RollingFileError_${thread:threadName}">
+            <Routes pattern="$${thread:threadName}">
+                <Route>
+                    <RollingFile name="RollingFileError_${thread:threadName}"
+                                 fileName="${logFilePath}/${logFileName}_${thread:threadName}_error.log"
+                                 filePattern="${logFilePath}/$${date:yyyy-MM}/${logFileName}-%d{yyyy-MM-dd}-${thread:threadName}-error_%i.log.gz">
+                        <Filters>
+                            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <PatternLayout pattern="%d{yyyy.MM.dd HH:mm:ss z} %-5level %class{36} %L %M - %msg%xEx%n"/>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+        <!--bufferSize整数，指定可以排队的events最大数量，如果使用BlockingQueue，这个数字必须是2的幂次-->
+        <!--includeLocation默认值是FALSE，如果指定为TRUE，会降低性能，但是推荐设置为TRUE，否则不打印位置行信息-->
+        <Async name="async" bufferSize="262144" includeLocation="true">
+            <AppenderRef ref="RollingFileDebug_${thread:threadName}"/>
+            <AppenderRef ref="RollingFileInfo_${thread:threadName}"/>
+            <AppenderRef ref="RollingFileError_${thread:threadName}"/>
+            <!-- 只要是级别比ERROR高的，包括ERROR就输出到控制台 -->
+            <AppenderRef ref="ConsolePrint" level="ERROR"/>
+        </Async>
+    </Appenders>
+    <Loggers>
+        <!--Logger用于定义log的level以及所采用的appender，如果无需自定义，可以使用root解决，root标签是log的默认输出形式-->
+        <!-- 级别顺序（低到高）：TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+        <Root level="DEBUG" includeLocation="true">
+            <!--AppenderRef中的ref值必须是在前面定义的appenders-->
+            <AppenderRef ref="async"/>
+        </Root>
+    </Loggers>
+</Configuration>
