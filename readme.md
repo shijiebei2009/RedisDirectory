@@ -1,9 +1,13 @@
+RedisDirectory [![Build Status](https://api.travis-ci.org/shijiebei2009/RedisDirectory.svg?branch=master)](https://travis-ci.org/shijiebei2009/RedisDirectory)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+========================================
+
 A Simple Redis storage engine for Lucene
 ========================================
 
 _The repo is just a very simple implements for store lucene's index files in redis. I initially did this project is aims to be usable in production_.
 But it is a completely small simple implements. It supports index file slice and mutex lock, the lock implements by java nio file lock, it can release lock when jvm exit abnormal.
-If you use a singleton lock, then you can not achieve mutual exclusion across processes, or else if you use redis to store a flag as lock, then the virtual machine can not be automatically unlock the if it crash.
+If you use a singleton lock, then you can not achieve mutual exclusion across processes, or else if you use redis to store a flag as lock, then the virtual machine can not be automatically unlock if it crash.
 
 Requirements
 ------------
