@@ -1,7 +1,7 @@
 package cn.codepub.redis.directory;
 
 import cn.codepub.redis.directory.utils.Constants;
-import com.sun.istack.internal.NotNull;
+import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.IOUtils;
 import org.apache.lucene.store.*;
@@ -54,7 +54,7 @@ public class RedisLockFactory extends LockFactory {
     }
 
     @Override
-    public Lock obtainLock(@NotNull Directory dir, String lockName) throws IOException {
+    public Lock obtainLock(@NonNull Directory dir, String lockName) throws IOException {
         if (!(dir instanceof RedisDirectory)) {
             throw new IllegalArgumentException("Expect argument of type [" + RedisDirectory.class.getName() + "]!");
         }
