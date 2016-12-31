@@ -19,7 +19,7 @@ Requirements
 Installation
 ------------
 
-*   Clone the repo _git clone git@github.com:maxpert/RedisDirectory.git RedisDirectory_
+*   Clone the repo _git clone git@github.com:shijiebei2009/RedisDirectory.git RedisDirectory_
 *   cd RedisDirectory
 *   use maven commands or gradle commands to build the project
 
