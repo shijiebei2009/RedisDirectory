@@ -10,6 +10,7 @@ If you use a singleton lock, then you can not achieve mutual exclusion across pr
 Requirements
 ------------
 
+* JDK 1.8+
 * Lucene 5.5.0+
 * Jedis 2.9.0+
 * Lombok 1.16.12+
@@ -68,7 +69,7 @@ https://github.com/DDTH/redir
 
 ## License
 
-Copyright 2016 [Xu Wang](www.codepub.cn)
+Copyright 2016 [Xu Wang](http://codepub.cn)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
