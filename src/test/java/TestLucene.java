@@ -47,17 +47,17 @@ public class TestLucene {
     public static void main(String[] args) throws ExecutionException, IOException, InterruptedException {
         //"10.97.19.55"
         //new TestLucene().testRedisDirectoryWithShardedJedisPool();
-        new TestLucene().testRedisDirectoryWithJedis();
+        //new TestLucene().testRedisDirectoryWithJedis();
         //new TestLucene().testRedisDirectoryWithJedisPool();
         //new TestLucene().testRamDirectory();
-        //new TestLucene().testMMapDirectory();
+        new TestLucene().testMMapDirectory();
     }
 
     public void testRamDirectory() throws IOException {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
-        //indexWriterConfig.setRAMBufferSizeMB(2048);
+        indexWriterConfig.setRAMBufferSizeMB(2048);
         RAMDirectory ramDirectory = new RAMDirectory();
         IndexWriter indexWriter = new IndexWriter(ramDirectory, indexWriterConfig);
         for (int i = 0; i < 500000; i++) {
@@ -69,11 +69,13 @@ public class TestLucene {
         log.error("RamDirectory consumes {}s!", (end - start) / 1000);
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(ramDirectory));
-        for (int i = 0; i < 100; i++) {
+        int total = 0;
+        for (int i = 0; i < 10000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
-            System.out.println(search.totalHits);
+            total += search.totalHits;
         }
+        System.out.println(total);
         end = System.currentTimeMillis();
         log.error("RamDirectory search consumes {}ms!", (end - start));
     }
@@ -98,7 +100,7 @@ public class TestLucene {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
         //indexWriterConfig.setInfoStream(System.out);
-        //indexWriterConfig.setRAMBufferSizeMB(2048);
+        indexWriterConfig.setRAMBufferSizeMB(2048);
         //LogByteSizeMergePolicy logByteSizeMergePolicy = new LogByteSizeMergePolicy();
         //logByteSizeMergePolicy.setMinMergeMB(1);
         //logByteSizeMergePolicy.setMaxMergeMB(64);
@@ -122,11 +124,13 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
                 6379))));
-        for (int i = 0; i < 100; i++) {
+        int total = 0;
+        for (int i = 0; i < 10000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
-            System.out.println(search.totalHits);
+            total += search.totalHits;
         }
+        System.out.println(total);
         end = System.currentTimeMillis();
         log.error("RedisDirectoryWithJedisPool search consumes {}ms!", (end - start));
     }
@@ -137,7 +141,7 @@ public class TestLucene {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
         //indexWriterConfig.setInfoStream(System.out);
-        //indexWriterConfig.setRAMBufferSizeMB(2048);
+        indexWriterConfig.setRAMBufferSizeMB(2048);
         //LogByteSizeMergePolicy logByteSizeMergePolicy = new LogByteSizeMergePolicy();
         //logByteSizeMergePolicy.setMinMergeMB(1);
         //logByteSizeMergePolicy.setMaxMergeMB(64);
@@ -169,11 +173,13 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new ShardedJedisPoolStream
                 (shardedJedisPool))));
-        for (int i = 0; i < 100; i++) {
+        int total = 0;
+        for (int i = 0; i < 10000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
-            System.out.println(search.totalHits);
+            total += search.totalHits;
         }
+        System.out.println(total);
         end = System.currentTimeMillis();
         log.error("RedisDirectoryWithShardedJedisPool search consumes {}ms!", (end - start));
     }
@@ -206,11 +212,13 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
                 6379))));
-        for (int i = 0; i < 100; i++) {
+        int total = 0;
+        for (int i = 0; i < 10000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
-            System.out.println(search.totalHits);
+            total += search.totalHits;
         }
+        System.out.println(total);
         end = System.currentTimeMillis();
         log.error("RedisDirectoryWithJedis search consumes {}ms!", (end - start));
     }
@@ -219,7 +227,7 @@ public class TestLucene {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
-        //indexWriterConfig.setRAMBufferSizeMB(2048);
+        indexWriterConfig.setRAMBufferSizeMB(2048);
         FSDirectory open = FSDirectory.open(Paths.get("E:/testlucene"));
         IndexWriter indexWriter = new IndexWriter(open, indexWriterConfig);
         for (int i = 0; i < 500000; i++) {
@@ -231,11 +239,13 @@ public class TestLucene {
         log.error("MMapDirectory consumes {}s!", (end - start) / 1000);
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(open));
-        for (int i = 0; i < 100; i++) {
+        int total = 0;
+        for (int i = 0; i < 10000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
-            System.out.println(search.totalHits);
+            total += search.totalHits;
         }
+        System.out.println(total);
         end = System.currentTimeMillis();
         log.error("MMapDirectory search consumes {}ms!", (end - start));
     }

@@ -51,13 +51,13 @@ I've just started. Have to:
 *   Redundancy support, maintain multiple copies of a file (or its blocks).
 
 ## Simple Performance Test ( Windows 7, Redis-x64-3.2 )
-|Type|Documents|Fields|Write Time(less is better)|100 Search Time(less is better)|
+|Type|Documents|Fields|Write Time |10000 Search Time |
 |---|---|---|---|---|
-|RedisDirectory with Local Jedis|500000|10|18s|810ms|
-|RedisDirectory with Local JedisPool|500000|10|13s|822ms|
-|RedisDirectory with Local ShardedJedisPool|500000|10|13s|503ms|
-|RamDirectory|500000|10|10s|48ms|
-|MMapDirectory|500000|10|14s|50ms|
+|RedisDirectory (Local Jedis)|500000|10|21s|1097ms|
+|RedisDirectory (Local JedisPool)|500000|10|18s|1157ms|
+|RedisDirectory (Local ShardedJedisPool)|500000|10|26s|606ms|
+|RamDirectory|500000|10|15s|153ms|
+|MMapDirectory|500000|10|18s|203ms|
 
 ## Related Project
 https://github.com/maxpert/RedisDirectory
