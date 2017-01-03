@@ -28,7 +28,7 @@ Features
 --------
 * Supports pool
 * Supports sharding
-* Supports cluster（not tested）
+* Supports cluster (not tested)
 * Supports Maven or Gradle Compile
 * Supports storage level distribution
 
@@ -81,9 +81,9 @@ redisDirectory.close();
 
 File is divided into blocks and stored as HASH in redis in binary format that can be loaded on demand. You can customise the block size by modifying the DEFAULT_BUFFER_SIZE in config file. *Remember its a 1 time intialization once index is created on a particular size it can't be changed; higher block size causes lower fragmentation*.
 
-The index file will store in redis as follows:<br/>
-directory metadata->index file->index file length<br/>
-file metadata->@index file:block number->the block values
+The index files will store in redis as follows:<br/>
+directory metadata (user definition) => index file name => index file length<br/>
+file metadata (user definition) => @index file name:block number => the block values
 
 TODO
 ----
