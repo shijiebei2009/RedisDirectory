@@ -47,6 +47,11 @@ public class JedisClusterStream implements InputOutputStream {
         // no transaction, implements yourself
     }
 
+    @Override
+    public void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength) {
+
+    }
+
     public JedisClusterStream(JedisCluster jedisCluster) {
         this.jedisCluster = jedisCluster;
     }

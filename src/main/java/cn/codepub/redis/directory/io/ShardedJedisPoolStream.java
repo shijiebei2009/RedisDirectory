@@ -2,6 +2,7 @@ package cn.codepub.redis.directory.io;
 
 import com.google.common.primitives.Longs;
 import redis.clients.jedis.ShardedJedis;
+import redis.clients.jedis.ShardedJedisPipeline;
 import redis.clients.jedis.ShardedJedisPool;
 
 import java.io.IOException;
@@ -28,13 +29,17 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
 public class ShardedJedisPoolStream implements InputOutputStream {
     private ShardedJedisPool shardedJedisPool;
 
+    private ShardedJedis getShardedJedis() {
+        return shardedJedisPool.getResource();
+    }
+
     public ShardedJedisPoolStream(ShardedJedisPool shardedJedisPool) {
         this.shardedJedisPool = shardedJedisPool;
     }
 
     @Override
     public Boolean hexists(byte[] key, byte[] field) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
         Boolean hexists = shardedJedis.hexists(key, field);
         shardedJedis.close();
         return hexists;
@@ -42,7 +47,7 @@ public class ShardedJedisPoolStream implements InputOutputStream {
 
     @Override
     public byte[] hget(byte[] key, byte[] field) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
         byte[] hget = shardedJedis.hget(key, field);
         shardedJedis.close();
         return hget;
@@ -57,14 +62,14 @@ public class ShardedJedisPoolStream implements InputOutputStream {
 
     @Override
     public Long hdel(byte[] key, byte[]... fields) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
         Long hdel = shardedJedis.hdel(key, fields);
         return hdel;
     }
 
     @Override
     public Long hset(byte[] key, byte[] field, byte[] value) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
         Long hset = shardedJedis.hset(key, field, value);
         shardedJedis.close();
         return hset;
@@ -72,7 +77,7 @@ public class ShardedJedisPoolStream implements InputOutputStream {
 
     @Override
     public Set<byte[]> hkeys(byte[] key) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
         Set<byte[]> hkeys = shardedJedis.hkeys(key);
         shardedJedis.close();
         return hkeys;
@@ -88,14 +93,16 @@ public class ShardedJedisPoolStream implements InputOutputStream {
      */
     @Override
     public void deleteFile(String fileLengthKey, String fileDataKey, String field, long blockSize) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
+        ShardedJedisPipeline pipelined = shardedJedis.pipelined();
         //delete file length
-        shardedJedis.hdel(fileLengthKey.getBytes(), field.getBytes());
+        pipelined.hdel(fileLengthKey.getBytes(), field.getBytes());
         //delete file content
         for (int i = 0; i < blockSize; i++) {
             byte[] blockName = getBlockName(field, i);
-            shardedJedis.hdel(fileDataKey.getBytes(), blockName);
+            pipelined.hdel(fileDataKey.getBytes(), blockName);
         }
+        pipelined.sync();
         shardedJedis.close();
     }
 
@@ -112,16 +119,32 @@ public class ShardedJedisPoolStream implements InputOutputStream {
     @Override
     public void rename(String fileLengthKey, String fileDataKey, String oldField, String newField, List<byte[]> values, long
             fileLength) {
-        ShardedJedis shardedJedis = shardedJedisPool.getResource();
+        ShardedJedis shardedJedis = getShardedJedis();
+        ShardedJedisPipeline pipelined = shardedJedis.pipelined();
         //add new file length
-        shardedJedis.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
+        pipelined.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
         //add new file content
         Long blockSize = getBlockSize(fileLength);
         for (int i = 0; i < blockSize; i++) {
-            shardedJedis.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
+            pipelined.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
         }
         values.clear();
+        pipelined.sync();
         shardedJedis.close();
         deleteFile(fileLengthKey, fileDataKey, oldField, blockSize);
+    }
+
+    @Override
+    public void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength) {
+        ShardedJedis shardedJedis = getShardedJedis();
+        ShardedJedisPipeline pipelined = shardedJedis.pipelined();
+        pipelined.hset(fileLengthKey.getBytes(), fileName.getBytes(), Longs.toByteArray(fileLength));
+        Long blockSize = getBlockSize(fileLength);
+        for (int i = 0; i < blockSize; i++) {
+            pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), values.get(i));
+        }
+        values.clear();
+        pipelined.sync();
+        shardedJedis.close();
     }
 }

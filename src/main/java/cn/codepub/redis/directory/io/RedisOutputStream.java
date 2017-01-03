@@ -8,10 +8,10 @@ import org.apache.lucene.store.BufferedChecksum;
 import org.apache.lucene.store.IndexOutput;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
 
-import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockName;
 import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
 
 /**
@@ -71,7 +71,7 @@ public class RedisOutputStream extends IndexOutput {
     private void flushBuffers() {
         //先flush刷新索引文件长度
         setFileLength();
-        long blockSize = redisFile.numBuffers();
+        long blockSize;
         //判断redis是否已经存在，若存在，必然不是我的，直接干掉
         Boolean hexists = inputOutputStream.hexists(Constants.dirMetadataBytes, indexFileName.getBytes());
         if (hexists) {
@@ -80,22 +80,15 @@ public class RedisOutputStream extends IndexOutput {
             long length = Longs.fromByteArray(bytes);
             //重新计算存在的文件的block
             blockSize = getBlockSize(length);
-            //干掉别人的东东，不仅要删除文件名，还要删除该文件下的所有块
-            for (int i = 0; i < blockSize; i++) {
-                byte[] secondName = getBlockName(indexFileName, i);
-                inputOutputStream.hdel(Constants.fileMetadataBytes, secondName);
-            }
-            //删除文件长度信息
-            inputOutputStream.hdel(Constants.dirMetadataBytes, indexFileName.getBytes());
+            //干掉别人的东东，不仅要删除文件名，还要删除该文件下的所有块和文件长度信息
+            inputOutputStream.deleteFile(Constants.dirMetadata, Constants.fileMetadata, indexFileName, blockSize);
             log.debug("Delete from redis file name = {}", indexFileName);
         } else {
             //不存在，需要将文件塞到redis中
-            for (int i = 0; i < blockSize; i++) {
-                inputOutputStream.hset(Constants.fileMetadataBytes, getBlockName(indexFileName, i), redisFile.getBuffer(i));
-            }
-            //完事添加文件长度信息
-            inputOutputStream.hset(Constants.dirMetadataBytes, indexFileName.getBytes(), Longs.toByteArray
-                    (redisFile.getFileLength()));
+            ArrayList<byte[]> buffers = redisFile.getBuffers();
+            inputOutputStream.saveFile(Constants.dirMetadata, Constants.fileMetadata, indexFileName, buffers, redisFile
+                    .getFileLength());
+            log.debug("Flush new file to redis, file name = {}", indexFileName);
         }
     }
 

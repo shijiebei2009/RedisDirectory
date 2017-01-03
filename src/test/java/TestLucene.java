@@ -2,6 +2,7 @@ import cn.codepub.redis.directory.RedisDirectory;
 import cn.codepub.redis.directory.io.JedisPoolStream;
 import cn.codepub.redis.directory.io.JedisStream;
 import cn.codepub.redis.directory.io.ShardedJedisPoolStream;
+import cn.codepub.redis.directory.utils.Constants;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -57,10 +58,9 @@ public class TestLucene {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
-        indexWriterConfig.setRAMBufferSizeMB(2048);
         RAMDirectory ramDirectory = new RAMDirectory();
         IndexWriter indexWriter = new IndexWriter(ramDirectory, indexWriterConfig);
-        for (int i = 0; i < 500000; i++) {
+        for (int i = 0; i < 5000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -70,7 +70,7 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(ramDirectory));
         int total = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -100,7 +100,7 @@ public class TestLucene {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
         //indexWriterConfig.setInfoStream(System.out);
-        indexWriterConfig.setRAMBufferSizeMB(2048);
+        //indexWriterConfig.setRAMBufferSizeMB(2048);
         //LogByteSizeMergePolicy logByteSizeMergePolicy = new LogByteSizeMergePolicy();
         //logByteSizeMergePolicy.setMinMergeMB(1);
         //logByteSizeMergePolicy.setMaxMergeMB(64);
@@ -110,10 +110,10 @@ public class TestLucene {
         //获取连接等待时间
         //genericObjectPoolConfig.setMaxWaitMillis(3000);
         //10s超时时间
-        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379);
+        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, Constants.timeOut);
         RedisDirectory redisDirectory = new RedisDirectory(new JedisPoolStream(jedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 500000; i++) {
+        for (int i = 0; i < 5000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -125,7 +125,7 @@ public class TestLucene {
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
                 6379))));
         int total = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -141,7 +141,7 @@ public class TestLucene {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
         //indexWriterConfig.setInfoStream(System.out);
-        indexWriterConfig.setRAMBufferSizeMB(2048);
+        //indexWriterConfig.setRAMBufferSizeMB(2048);
         //LogByteSizeMergePolicy logByteSizeMergePolicy = new LogByteSizeMergePolicy();
         //logByteSizeMergePolicy.setMinMergeMB(1);
         //logByteSizeMergePolicy.setMaxMergeMB(64);
@@ -161,7 +161,7 @@ public class TestLucene {
         ShardedJedisPool shardedJedisPool = new ShardedJedisPool(jedisPoolConfig, shards);
         RedisDirectory redisDirectory = new RedisDirectory(new ShardedJedisPoolStream(shardedJedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 500000; i++) {
+        for (int i = 0; i < 5000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -174,7 +174,7 @@ public class TestLucene {
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new ShardedJedisPoolStream
                 (shardedJedisPool))));
         int total = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -189,7 +189,7 @@ public class TestLucene {
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
         //indexWriterConfig.setInfoStream(System.out);
-        indexWriterConfig.setRAMBufferSizeMB(2048);
+        //indexWriterConfig.setRAMBufferSizeMB(2048);
         //LogByteSizeMergePolicy logByteSizeMergePolicy = new LogByteSizeMergePolicy();
         //logByteSizeMergePolicy.setMinMergeMB(1);
         //logByteSizeMergePolicy.setMaxMergeMB(64);
@@ -201,7 +201,7 @@ public class TestLucene {
         //10s超时时间
         RedisDirectory redisDirectory = new RedisDirectory(new JedisStream("localhost", 6379));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 500000; i++) {
+        for (int i = 0; i < 5000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -213,7 +213,7 @@ public class TestLucene {
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
                 6379))));
         int total = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -227,10 +227,9 @@ public class TestLucene {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
-        indexWriterConfig.setRAMBufferSizeMB(2048);
         FSDirectory open = FSDirectory.open(Paths.get("E:/testlucene"));
         IndexWriter indexWriter = new IndexWriter(open, indexWriterConfig);
-        for (int i = 0; i < 500000; i++) {
+        for (int i = 0; i < 5000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -240,7 +239,7 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(open));
         int total = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -249,4 +248,5 @@ public class TestLucene {
         end = System.currentTimeMillis();
         log.error("MMapDirectory search consumes {}ms!", (end - start));
     }
+
 }

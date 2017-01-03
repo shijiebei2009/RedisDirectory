@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.Pipeline;
 
 import java.util.List;
 import java.util.Set;
@@ -36,17 +36,27 @@ public class JedisPoolStream implements InputOutputStream {
 
     @Override
     public Boolean hexists(byte[] key, byte[] field) {
-        Jedis jedis = jedisPool.getResource();
-        Boolean hexists = jedis.hexists(key, field);
-        jedis.close();
+        boolean hexists;
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            hexists = jedis.hexists(key, field);
+        } finally {
+            jedis.close();
+        }
         return hexists;
     }
 
     @Override
     public byte[] hget(byte[] key, byte[] field) {
-        Jedis jedis = jedisPool.getResource();
-        byte[] hget = jedis.hget(key, field);
-        jedis.close();
+        byte[] hget;
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            hget = jedis.hget(key, field);
+        } finally {
+            jedis.close();
+        }
         return hget;
     }
 
@@ -59,26 +69,41 @@ public class JedisPoolStream implements InputOutputStream {
 
     @Override
     public Long hdel(byte[] key, byte[]... fields) {
-        Jedis jedis = jedisPool.getResource();
-        Long hdel = jedis.hdel(key, fields);
-        jedis.close();
+        long hdel;
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            hdel = jedis.hdel(key, fields);
+        } finally {
+            jedis.close();
+        }
         return hdel;
     }
 
     @Override
     public Long hset(byte[] key, byte[] field, byte[] value) {
-        Jedis jedis = jedisPool.getResource();
-        Long hset = jedis.hset(key, field, value);
-        jedis.close();
+        Long hset;
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            hset = jedis.hset(key, field, value);
+        } finally {
+            jedis.close();
+        }
         return hset;
     }
 
 
     @Override
     public Set<byte[]> hkeys(byte[] key) {
-        Jedis jedis = jedisPool.getResource();
-        Set<byte[]> hkeys = jedis.hkeys(key);
-        jedis.close();
+        Set<byte[]> hkeys;
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            hkeys = jedis.hkeys(key);
+        } finally {
+            jedis.close();
+        }
         return hkeys;
     }
 
@@ -92,40 +117,61 @@ public class JedisPoolStream implements InputOutputStream {
      */
     @Override
     public void deleteFile(String fileLengthKey, String fileDataKey, String field, long blockSize) {
-        Jedis jedis = jedisPool.getResource();
-        Transaction multi = jedis.multi();
-        //delete file length
-        multi.hdel(fileLengthKey.getBytes(), field.getBytes());
-        //delete file content
-        for (int i = 0; i < blockSize; i++) {
-            byte[] blockName = getBlockName(field, i);
-            multi.hdel(fileDataKey.getBytes(), blockName);
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            Pipeline pipelined = jedis.pipelined();
+            //delete file length
+            pipelined.hdel(fileLengthKey.getBytes(), field.getBytes());
+            //delete file content
+            for (int i = 0; i < blockSize; i++) {
+                byte[] blockName = getBlockName(field, i);
+                pipelined.hdel(fileDataKey.getBytes(), blockName);
+            }
+            pipelined.sync();
+        } finally {
+            jedis.close();
         }
-        List<Object> exec = multi.exec();
-        checkTransactionResult(exec);
-        multi.clear();
-        jedis.close();
     }
 
     @Override
     public void rename(String fileLengthKey, String fileDataKey, String oldField, String newField, List<byte[]> values, long
             fileLength) {
-        Jedis jedis = jedisPool.getResource();
-        Transaction multi = jedis.multi();
-        //add new file length
-        multi.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
-        //add new file content
-        Long blockSize = getBlockSize(fileLength);
-        for (int i = 0; i < blockSize; i++) {
-            multi.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
+        long blockSize = 0;
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            Pipeline pipelined = jedis.pipelined();
+            //add new file length
+            pipelined.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
+            //add new file content
+            blockSize = getBlockSize(fileLength);
+            for (int i = 0; i < blockSize; i++) {
+                pipelined.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
+            }
+            values.clear();
+            pipelined.sync();
+        } finally {
+            jedis.close();
+            deleteFile(fileLengthKey, fileDataKey, oldField, blockSize);
         }
-        values.clear();
-        List<Object> exec = multi.exec();
-        checkTransactionResult(exec);
-        multi.clear();
-        jedis.close();
-        deleteFile(fileLengthKey, fileDataKey, oldField, blockSize);
     }
 
-
+    @Override
+    public void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength) {
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            Pipeline pipelined = jedis.pipelined();
+            pipelined.hset(fileLengthKey.getBytes(), fileName.getBytes(), Longs.toByteArray(fileLength));
+            Long blockSize = getBlockSize(fileLength);
+            for (int i = 0; i < blockSize; i++) {
+                pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), values.get(i));
+            }
+            values.clear();
+            pipelined.sync();
+        } finally {
+            jedis.close();
+        }
+    }
 }

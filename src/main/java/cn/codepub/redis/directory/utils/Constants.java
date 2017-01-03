@@ -26,5 +26,5 @@ public interface Constants {
     String lockFilePath = ConfigUtils.getValue("LOCK_FILE_PATH");
     byte[] dirMetadataBytes = dirMetadata.getBytes();
     byte[] fileMetadataBytes = fileMetadata.getBytes();
-
+    int timeOut = NumberUtils.toInt(ConfigUtils.getValue("TIME_OUT"));
 }

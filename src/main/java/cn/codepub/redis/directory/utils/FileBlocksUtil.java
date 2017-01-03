@@ -18,10 +18,6 @@ import lombok.extern.log4j.Log4j2;
  */
 @Log4j2
 public class FileBlocksUtil {
-    //public static String getBlockName(String fileName, int i) {
-    //    return String.format("@%s:%s", fileName, i);
-    //}
-
     public static byte[] getBlockName(String fileName, int i) {
         return String.format("@%s:%s", fileName, i).getBytes();
     }

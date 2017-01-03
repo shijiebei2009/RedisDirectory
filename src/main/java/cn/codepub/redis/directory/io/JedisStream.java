@@ -1,9 +1,10 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.utils.Constants;
 import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.Pipeline;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,10 +31,10 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
 public class JedisStream implements InputOutputStream {
     private String IP;
     private int port;
-    private int timeout = 3000;
+    private int timeout = Constants.timeOut;
 
     private Jedis openJedis() {
-        return new Jedis(IP, port, timeout);
+        return new Jedis(IP, port, this.timeout);
     }
 
     public JedisStream(String IP, int port, int timeout) {
@@ -48,17 +49,27 @@ public class JedisStream implements InputOutputStream {
 
     @Override
     public Boolean hexists(byte[] key, byte[] field) {
-        Jedis jedis = openJedis();
-        Boolean hexists = jedis.hexists(key, field);
-        jedis.close();
+        boolean hexists;
+        Jedis jedis = null;
+        try {
+            jedis = openJedis();
+            hexists = jedis.hexists(key, field);
+        } finally {
+            jedis.close();
+        }
         return hexists;
     }
 
     @Override
     public byte[] hget(byte[] key, byte[] field) {
-        Jedis jedis = openJedis();
-        byte[] hget = jedis.hget(key, field);
-        jedis.close();
+        Jedis jedis = null;
+        byte[] hget;
+        try {
+            jedis = openJedis();
+            hget = jedis.hget(key, field);
+        } finally {
+            jedis.close();
+        }
         return hget;
     }
 
@@ -94,17 +105,15 @@ public class JedisStream implements InputOutputStream {
     @Override
     public void deleteFile(String fileLengthKey, String fileDataKey, String field, long blockSize) {
         Jedis jedis = openJedis();
-        Transaction multi = jedis.multi();
+        Pipeline pipelined = jedis.pipelined();
         //delete file length
-        multi.hdel(fileLengthKey.getBytes(), field.getBytes());
+        pipelined.hdel(fileLengthKey.getBytes(), field.getBytes());
         //delete file content
         for (int i = 0; i < blockSize; i++) {
             byte[] blockName = getBlockName(field, i);
-            multi.hdel(fileDataKey.getBytes(), blockName);
+            pipelined.hdel(fileDataKey.getBytes(), blockName);
         }
-        List<Object> exec = multi.exec();
-        checkTransactionResult(exec);
-        multi.clear();
+        pipelined.sync();
         jedis.close();
     }
 
@@ -112,18 +121,29 @@ public class JedisStream implements InputOutputStream {
     public void rename(String fileLengthKey, String fileDataKey, String oldField, String newField, List<byte[]> values, long
             fileLength) {
         Jedis jedis = openJedis();
-        Transaction multi = jedis.multi();
+        Pipeline pipelined = jedis.pipelined();
         //add new file length
-        multi.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
+        pipelined.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
         //add new file content
         Long blockSize = getBlockSize(fileLength);
         for (int i = 0; i < blockSize; i++) {
-            multi.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
+            pipelined.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
         }
-        List<Object> exec = multi.exec();
-        checkTransactionResult(exec);
-        multi.clear();
+        pipelined.sync();
         jedis.close();
         deleteFile(fileLengthKey, fileDataKey, oldField, blockSize);
+    }
+
+    @Override
+    public void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength) {
+        Jedis jedis = openJedis();
+        Pipeline pipelined = jedis.pipelined();
+        pipelined.hset(fileLengthKey.getBytes(), fileName.getBytes(), Longs.toByteArray(fileLength));
+        Long blockSize = getBlockSize(fileLength);
+        for (int i = 0; i < blockSize; i++) {
+            pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), values.get(i));
+        }
+        pipelined.sync();
+        jedis.close();
     }
 }

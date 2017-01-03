@@ -1,6 +1,6 @@
 RedisDirectory [![Build Status](https://api.travis-ci.org/shijiebei2009/RedisDirectory.svg?branch=master)](https://travis-ci.org/shijiebei2009/RedisDirectory)   [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 ===========================================================================================================================================================================================================================================================================================
-A Simple Redis storage engine for Lucene
+A simple redis storage engine for Lucene
 ========================================
 
 _The repo is just a very simple implements for store lucene's index files in redis. I initially did this project is aims to be usable in production_.
@@ -28,13 +28,14 @@ Features
 --------
 *   Supports pool
 *   Supports sharding
-*   Supports cluster(not tested)
+*   Supports cluster（）(not tested)
 *   Storage level distribution
 
 Usage
 -----
 
- Make sure you have the RedisDirectory.jar in you class path (Gradle or Maven can help you). To use it just please see TestLucene.java
+Make sure you have the RedisDirectory.jar in you class path (Gradle or Maven can help you). To use it just please see TestLucene.java, you can set `stop-writes-on-bgsave-error yes` in the redis.windows.conf if it occurs **MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk. Commands that may modify the data set are disabled. Please check Redis logs for details about the error.
+**
 
 File is divided into blocks and stored as HASH in redis in binary format that can be loaded on demand. You can customise the block size by modifying the DEFAULT_BUFFER_SIZE in config file. *Remember its a 1 time intialization once index is created on a particular size it can't be changed; higher block size causes lower fragmentation*.
 
@@ -54,17 +55,16 @@ I've just started. Have to:
 *   Redundancy support, maintain multiple copies of a file (or its blocks).
 
 ## Simple Performance Test ( Windows 7, Redis-x64-3.2 )
-|Type|Documents|Fields|Write Time |10000 Search Time |
+|Type|Documents|Fields|Write Time |Search Time(One Million)|
 |---|---|---|---|---|
-|RedisDirectory (Local Jedis)|500000|10|21s|1097ms|
-|RedisDirectory (Local JedisPool)|500000|10|18s|1157ms|
-|RedisDirectory (Local ShardedJedisPool)|500000|10|26s|606ms|
-|RamDirectory|500000|10|15s|153ms|
-|MMapDirectory|500000|10|18s|203ms|
+|RamDirectory|five million|10|85s|18.4s|
+|RedisDirectory (Local JedisPool)|five million|10|93s|23.2s|
+|RedisDirectory (Local ShardedJedisPool)|five million|10|96s|21.4s|
+|RedisDirectory (Local Jedis)|five million|10|101s|22.5s|
+|MMapDirectory|five million|10|105s|19.2s|
 
 ## Related Project
-https://github.com/maxpert/RedisDirectory
-
+https://github.com/maxpert/RedisDirectory<br/>
 https://github.com/DDTH/redir
 
 ## License
