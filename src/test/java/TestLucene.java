@@ -47,11 +47,12 @@ import java.util.concurrent.ExecutionException;
 public class TestLucene {
     public static void main(String[] args) throws ExecutionException, IOException, InterruptedException {
         //"10.97.19.55"
-        //new TestLucene().testRedisDirectoryWithShardedJedisPool();
+        new TestLucene().testRedisDirectoryWithShardedJedisPool();
         //new TestLucene().testRedisDirectoryWithJedis();
         //new TestLucene().testRedisDirectoryWithJedisPool();
         //new TestLucene().testRamDirectory();
-        new TestLucene().testMMapDirectory();
+        //new TestLucene().testMMapDirectory();
+        //new TestLucene().testRedisDirectoryWithRemoteJedisPool();
     }
 
     public void testRamDirectory() throws IOException {
@@ -92,8 +93,43 @@ public class TestLucene {
         document.add(new BinaryDocValuesField("key8", new BytesRef(RandomStringUtils.randomAlphabetic(5))));
         document.add(new DoubleDocValuesField("key9", RandomUtils.nextDouble(0, 1000)));
         document.add(new FloatDocValuesField("key10", RandomUtils.nextFloat(0, 1000)));
+        document.add(new LongField("key11", (long) i * 50000, Field.Store.YES));
+        document.add(new IntField("key12", i * 50000, Field.Store.YES));
+        document.add(new FloatField("key13", (float) i * 50000, Field.Store.YES));
+        document.add(new DoubleField("key14", (double) i * 50000, Field.Store.YES));
+        document.add(new StringField("key15", RandomStringUtils.randomAlphabetic(6), Field.Store.YES));
         return document;
     }
+
+    public void testRedisDirectoryWithRemoteJedisPool() throws IOException {
+        long start = System.currentTimeMillis();
+        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
+                .OpenMode.CREATE);
+        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "10.97.19.55", 6379, Constants.timeOut);
+        RedisDirectory redisDirectory = new RedisDirectory(new JedisPoolStream(jedisPool));
+        IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
+        for (int i = 0; i < 5000000; i++) {
+            indexWriter.addDocument(addDocument(i));
+        }
+        indexWriter.commit();
+        indexWriter.close();
+        redisDirectory.close();
+        long end = System.currentTimeMillis();
+        log.error("RedisDirectoryWithJedisPool consumes {}s!", (end - start) / 1000);
+        start = System.currentTimeMillis();
+        IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
+                6379))));
+        int total = 0;
+        for (int i = 0; i < 1000000; i++) {
+            TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
+            TopDocs search = indexSearcher.search(key1, 10);
+            total += search.totalHits;
+        }
+        System.out.println(total);
+        end = System.currentTimeMillis();
+        log.error("RedisDirectoryWithJedisPool search consumes {}ms!", (end - start));
+    }
+
 
     public void testRedisDirectoryWithJedisPool() throws IOException {
         long start = System.currentTimeMillis();
@@ -152,16 +188,15 @@ public class TestLucene {
         //genericObjectPoolConfig.setMaxWaitMillis(3000);
         //10s超时时间
         List<JedisShardInfo> shards = new ArrayList<>();
-        JedisShardInfo si = new JedisShardInfo("localhost", 6379);
+        JedisShardInfo si = new JedisShardInfo("localhost", 6379, Constants.timeOut);
         //JedisShardInfo si2 = new JedisShardInfo("localhost", 6380);
         shards.add(si);
         //shards.add(si2);
         JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
-
         ShardedJedisPool shardedJedisPool = new ShardedJedisPool(jedisPoolConfig, shards);
         RedisDirectory redisDirectory = new RedisDirectory(new ShardedJedisPoolStream(shardedJedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 5000000; i++) {
+        for (int i = 0; i < 50000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -174,7 +209,7 @@ public class TestLucene {
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new ShardedJedisPoolStream
                 (shardedJedisPool))));
         int total = 0;
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;

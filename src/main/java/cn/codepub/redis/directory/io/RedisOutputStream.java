@@ -31,7 +31,7 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
 @Log4j2
 public class RedisOutputStream extends IndexOutput {
     private InputOutputStream inputOutputStream;
-    private final RedisFile redisFile;
+    private RedisFile redisFile;
     private String indexFileName;
     private final Checksum crc;
     private byte[] currentBuffer;
@@ -73,7 +73,7 @@ public class RedisOutputStream extends IndexOutput {
         setFileLength();
         long blockSize;
         //判断redis是否已经存在，若存在，必然不是我的，直接干掉
-        Boolean hexists = inputOutputStream.hexists(Constants.dirMetadataBytes, indexFileName.getBytes());
+        boolean hexists = inputOutputStream.hexists(Constants.dirMetadataBytes, indexFileName.getBytes());
         if (hexists) {
             //在存放length和取length的时候，使用ByteBuffer
             byte[] bytes = inputOutputStream.hget(Constants.dirMetadataBytes, indexFileName.getBytes());
@@ -90,6 +90,8 @@ public class RedisOutputStream extends IndexOutput {
                     .getFileLength());
             log.debug("Flush new file to redis, file name = {}", indexFileName);
         }
+        redisFile.getBuffers().clear();
+        redisFile = null;
     }
 
     /**

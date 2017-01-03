@@ -40,7 +40,7 @@ public class ShardedJedisPoolStream implements InputOutputStream {
     @Override
     public Boolean hexists(byte[] key, byte[] field) {
         ShardedJedis shardedJedis = getShardedJedis();
-        Boolean hexists = shardedJedis.hexists(key, field);
+        boolean hexists = shardedJedis.hexists(key, field);
         shardedJedis.close();
         return hexists;
     }
