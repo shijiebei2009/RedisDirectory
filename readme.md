@@ -1,11 +1,11 @@
 RedisDirectory [![Build Status](https://api.travis-ci.org/shijiebei2009/RedisDirectory.svg?branch=master)](https://travis-ci.org/shijiebei2009/RedisDirectory)   [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 ===========================================================================================================================================================================================================================================================================================
-A simple redis storage engine for Lucene
+A simple redis storage engine for lucene
 ========================================
 
 _The repo is just a very simple implements for store lucene's index files in redis. I initially did this project is aims to be usable in production_.
-But it is a completely small simple implements. It supports index file slice and mutex lock, the lock implements by java nio file lock, it can release lock when jvm exit abnormal.
-If you use a singleton lock, then you can not achieve mutual exclusion across processes, or else if you use redis to store a flag as lock, then the virtual machine can not be automatically unlock if it crash.
+It's a complete concise implementation, you can use a different jedis implements (jedis/jedis pool/sharded jedis pool/jedis cluster) without modifying the code. It supports index file slice, mutex lock and redis file cache. With redis file cache it can help you improve the performance of writing index files. In this repo the lock implements by java nio file lock, it can release lock when jvm exit abnormal.
+If you use a singleton lock, then you can not achieve mutual exclusion across multi processes, or else if you use redis to store a flag as lock, then the flag will still store in redis when the java virtual machine exit abnormal. And when you use next time, you can not obtain lock again unless you delete the lock flag in the redis manual.
 
 Requirements
 ------------
@@ -20,29 +20,70 @@ Requirements
 Installation
 ------------
 
-*   Clone the repo _git clone git@github.com:shijiebei2009/RedisDirectory.git RedisDirectory_
-*   cd RedisDirectory
-*   use maven commands or gradle commands to build the project
+* Clone the repo _git clone git@github.com:shijiebei2009/RedisDirectory.git RedisDirectory_
+* cd RedisDirectory
+* use maven commands or gradle commands to build the project
 
 Features
 --------
-*   Supports pool
-*   Supports sharding
-*   Supports cluster（）(not tested)
-*   Storage level distribution
+* Supports pool
+* Supports sharding
+* Supports cluster（not tested）
+* Supports Maven or Gradle Compile
+* Supports storage level distribution
 
 Usage
 -----
 
-Make sure you have the RedisDirectory.jar in you class path (Gradle or Maven can help you). To use it just please see TestLucene.java, you can set `stop-writes-on-bgsave-error yes` in the redis.windows.conf if it occurs **MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk. Commands that may modify the data set are disabled. Please check Redis logs for details about the error.
-**
+Make sure you have the RedisDirectory.jar in you class path (Gradle or Maven can help you). To use it just like follows, you can set `stop-writes-on-bgsave-error no` in the redis.windows.conf if it occurs **MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk. Commands that may modify the data set are disabled. Please check Redis logs for details about the error.**
+
+JedisPool
+
+```java
+IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
+                .OpenMode.CREATE);
+JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379);
+RedisDirectory redisDirectory = new RedisDirectory(new JedisPoolStream(jedisPool));
+IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
+indexWriter.addDocument(...);
+indexWriter.close();
+redisDirectory.close();
+```
+
+Jedis
+
+```java
+IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
+                .OpenMode.CREATE);
+RedisDirectory redisDirectory = new RedisDirectory(new JedisStream("localhost", 6379));
+IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
+indexWriter.addDocument(...);
+indexWriter.close();
+redisDirectory.close();
+```
+
+ShardedJedisPool
+
+```java
+IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
+                .OpenMode.CREATE);
+List<JedisShardInfo> shards = new ArrayList<>();
+JedisShardInfo si = new JedisShardInfo("localhost", 6379);
+shards.add(si);
+JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+ShardedJedisPool shardedJedisPool = new ShardedJedisPool(jedisPoolConfig, shards);
+RedisDirectory redisDirectory = new RedisDirectory(new ShardedJedisPoolStream(shardedJedisPool));
+IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
+indexWriter.addDocument(...);
+indexWriter.close();
+redisDirectory.close();
+```
 
 File is divided into blocks and stored as HASH in redis in binary format that can be loaded on demand. You can customise the block size by modifying the DEFAULT_BUFFER_SIZE in config file. *Remember its a 1 time intialization once index is created on a particular size it can't be changed; higher block size causes lower fragmentation*.
 
-Sharding
---------
-
- Look closely Jedis is doing the complete sharding for us.
+The index file will store in redis as follows:<br/>
+directory metadata->index file->index file length<br/>
+file metadata->@index file:block number->the block values
 
 TODO
 ----
