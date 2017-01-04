@@ -5,10 +5,14 @@ import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockName;
 import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
@@ -18,7 +22,7 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
  * Created by wangxu on 2016/12/26 16:18.
  * </p>
  * <p>
- * Description: TODO
+ * Description: Using for Jedis
  * </p>
  *
  * @author Wang Xu
@@ -131,6 +135,7 @@ public class JedisStream implements InputOutputStream {
         }
         pipelined.sync();
         jedis.close();
+        values.clear();
         deleteFile(fileLengthKey, fileDataKey, oldField, blockSize);
     }
 
@@ -145,10 +150,29 @@ public class JedisStream implements InputOutputStream {
         }
         pipelined.sync();
         jedis.close();
+        values.clear();
     }
 
     @Override
     public List<byte[]> loadFileOnce(String fileDataKey, String fileName, long blockSize) {
-        return null;
+        Jedis jedis = openJedis();
+        Pipeline pipelined = jedis.pipelined();
+        List<byte[]> res = new ArrayList<>();
+        List<Response<byte[]>> temps = new ArrayList<>();
+        for (int i = 0; i < blockSize; i++) {
+            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
+            temps.add(data);
+        }
+        try {
+            pipelined.sync();
+        } catch (JedisConnectionException e) {
+            log.error("pipelined = {}, blockSize = {}!", pipelined.toString(), blockSize);
+            log.error("", e);
+        } finally {
+            jedis.close();
+        }
+        res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+        temps.clear();
+        return res;
     }
 }

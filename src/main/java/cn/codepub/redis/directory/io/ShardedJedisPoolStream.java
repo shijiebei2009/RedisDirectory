@@ -22,7 +22,7 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
  * Created by wangxu on 2016/12/30 16:15.
  * </p>
  * <p>
- * Description: TODO
+ * Description: Using for Sharded Jedis
  * </p>
  *
  * @author Wang Xu
@@ -134,9 +134,9 @@ public class ShardedJedisPoolStream implements InputOutputStream {
         for (int i = 0; i < blockSize; i++) {
             pipelined.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
         }
-        values.clear();
         pipelined.sync();
         shardedJedis.close();
+        values.clear();
         deleteFile(fileLengthKey, fileDataKey, oldField, blockSize);
     }
 
@@ -161,18 +161,19 @@ public class ShardedJedisPoolStream implements InputOutputStream {
         List<byte[]> res = new ArrayList<>();
         List<Response<byte[]>> temps = new ArrayList<>();
         for (int i = 0; i < blockSize; i++) {
-            Response<byte[]> hget = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
-            temps.add(hget);
+            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
+            temps.add(data);
         }
         try {
             pipelined.sync();
         } catch (JedisConnectionException e) {
-            log.error(pipelined.toString());
-            log.error(blockSize);
+            log.error("pipelined = {}, blockSize = {}!", pipelined.toString(), blockSize);
             log.error("", e);
+        } finally {
+            shardedJedis.close();
         }
-        shardedJedis.close();
         res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+        temps.clear();
         return res;
     }
 }

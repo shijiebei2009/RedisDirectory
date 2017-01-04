@@ -11,7 +11,7 @@ import java.util.Set;
  * Created by wangxu on 2016/12/26 15:18.
  * </p>
  * <p>
- * Description: TODO
+ * Description: Using for Jedis Cluster
  * </p>
  *
  * @author Wang Xu
@@ -49,11 +49,12 @@ public class JedisClusterStream implements InputOutputStream {
 
     @Override
     public void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength) {
-
+        //implements yourself
     }
 
     @Override
     public List<byte[]> loadFileOnce(String fileDataKey, String fileName, long blockSize) {
+        //implements yourself
         return null;
     }
 

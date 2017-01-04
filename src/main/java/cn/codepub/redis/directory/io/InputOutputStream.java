@@ -16,7 +16,7 @@ import java.util.Set;
  * Created by wangxu on 2016/12/26 15:08.
  * </p>
  * <p>
- * Description: TODO
+ * Description:
  * </p>
  *
  * @author Wang Xu
@@ -26,6 +26,11 @@ import java.util.Set;
  * Licence: Apache v2 License
  */
 public interface InputOutputStream {
+    /**
+     * @param key   first field
+     * @param field second field
+     * @return iff exists return true
+     */
     Boolean hexists(final byte[] key, final byte[] field);
 
     byte[] hget(final byte[] key, final byte[] field);
