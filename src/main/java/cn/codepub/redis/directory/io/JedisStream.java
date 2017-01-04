@@ -146,4 +146,9 @@ public class JedisStream implements InputOutputStream {
         pipelined.sync();
         jedis.close();
     }
+
+    @Override
+    public List<byte[]> loadFileOnce(String fileDataKey, String fileName, long blockSize) {
+        return null;
+    }
 }

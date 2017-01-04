@@ -9,6 +9,7 @@ import org.apache.lucene.util.Accountable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>
@@ -28,7 +29,8 @@ import java.util.Collections;
 @ToString
 public class RedisFile implements Accountable {
     @Getter
-    protected final ArrayList<byte[]> buffers = new ArrayList<>();
+    @Setter
+    private List<byte[]> buffers = new ArrayList<>();
     @Getter
     @Setter
     private String fileName;
@@ -68,9 +70,7 @@ public class RedisFile implements Accountable {
             buffers.add(buffer);
             sizeInBytes += size;
         }
-        //if (directory != null) {
-        //    directory.sizeInBytes.getAndAdd(size);
-        //}
+        RedisDirectory.getSizeInBytes().getAndAdd(size);
         return buffer;
     }
 

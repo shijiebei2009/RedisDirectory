@@ -1,13 +1,18 @@
 package cn.codepub.redis.directory.io;
 
 import com.google.common.primitives.Longs;
+import lombok.extern.log4j.Log4j2;
+import redis.clients.jedis.Response;
 import redis.clients.jedis.ShardedJedis;
 import redis.clients.jedis.ShardedJedisPipeline;
 import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockName;
 import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
@@ -26,6 +31,7 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
  * WebSite: http://codepub.cn <br></br>
  * Licence: Apache v2 License
  */
+@Log4j2
 public class ShardedJedisPoolStream implements InputOutputStream {
     private ShardedJedisPool shardedJedisPool;
 
@@ -143,8 +149,30 @@ public class ShardedJedisPoolStream implements InputOutputStream {
         for (int i = 0; i < blockSize; i++) {
             pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), values.get(i));
         }
-        values.clear();
         pipelined.sync();
         shardedJedis.close();
+        values.clear();
+    }
+
+    @Override
+    public List<byte[]> loadFileOnce(String fileDataKey, String fileName, long blockSize) {
+        ShardedJedis shardedJedis = getShardedJedis();
+        ShardedJedisPipeline pipelined = shardedJedis.pipelined();
+        List<byte[]> res = new ArrayList<>();
+        List<Response<byte[]>> temps = new ArrayList<>();
+        for (int i = 0; i < blockSize; i++) {
+            Response<byte[]> hget = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
+            temps.add(hget);
+        }
+        try {
+            pipelined.sync();
+        } catch (JedisConnectionException e) {
+            log.error(pipelined.toString());
+            log.error(blockSize);
+            log.error("", e);
+        }
+        shardedJedis.close();
+        res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+        return res;
     }
 }

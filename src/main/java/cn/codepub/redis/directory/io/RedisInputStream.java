@@ -24,7 +24,7 @@ import java.io.IOException;
  */
 @Log4j2
 public class RedisInputStream extends IndexInput implements Cloneable {
-    private final RedisFile redisFile;
+    private RedisFile redisFile;
     private final long length;//the total length of the index file
     private byte[] currentBuffer;
     private int currentBufferIndex;
@@ -112,6 +112,7 @@ public class RedisInputStream extends IndexInput implements Cloneable {
     @Override
     public void close() {
         // NOOP
+        redisFile = null;
     }
 
     @Override

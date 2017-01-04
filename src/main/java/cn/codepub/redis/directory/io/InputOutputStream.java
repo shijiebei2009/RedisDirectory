@@ -80,4 +80,6 @@ public interface InputOutputStream {
     }
 
     void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength);
+
+    List<byte[]> loadFileOnce(String fileDataKey, String fileName, long blockSize);
 }

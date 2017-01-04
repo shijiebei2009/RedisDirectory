@@ -52,6 +52,11 @@ public class JedisClusterStream implements InputOutputStream {
 
     }
 
+    @Override
+    public List<byte[]> loadFileOnce(String fileDataKey, String fileName, long blockSize) {
+        return null;
+    }
+
     public JedisClusterStream(JedisCluster jedisCluster) {
         this.jedisCluster = jedisCluster;
     }

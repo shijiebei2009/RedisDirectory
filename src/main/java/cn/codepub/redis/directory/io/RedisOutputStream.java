@@ -1,18 +1,16 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.RedisDirectory;
 import cn.codepub.redis.directory.RedisFile;
 import cn.codepub.redis.directory.utils.Constants;
-import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import org.apache.lucene.store.BufferedChecksum;
 import org.apache.lucene.store.IndexOutput;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
-
-import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
 
 /**
  * <p>
@@ -71,26 +69,11 @@ public class RedisOutputStream extends IndexOutput {
     private void flushBuffers() {
         //先flush刷新索引文件长度
         setFileLength();
-        long blockSize;
-        //判断redis是否已经存在，若存在，必然不是我的，直接干掉
-        boolean hexists = inputOutputStream.hexists(Constants.dirMetadataBytes, indexFileName.getBytes());
-        if (hexists) {
-            //在存放length和取length的时候，使用ByteBuffer
-            byte[] bytes = inputOutputStream.hget(Constants.dirMetadataBytes, indexFileName.getBytes());
-            long length = Longs.fromByteArray(bytes);
-            //重新计算存在的文件的block
-            blockSize = getBlockSize(length);
-            //干掉别人的东东，不仅要删除文件名，还要删除该文件下的所有块和文件长度信息
-            inputOutputStream.deleteFile(Constants.dirMetadata, Constants.fileMetadata, indexFileName, blockSize);
-            log.debug("Delete from redis file name = {}", indexFileName);
-        } else {
-            //不存在，需要将文件塞到redis中
-            ArrayList<byte[]> buffers = redisFile.getBuffers();
-            inputOutputStream.saveFile(Constants.dirMetadata, Constants.fileMetadata, indexFileName, buffers, redisFile
-                    .getFileLength());
-            log.debug("Flush new file to redis, file name = {}", indexFileName);
-        }
-        redisFile.getBuffers().clear();
+        List<byte[]> buffers = redisFile.getBuffers();
+        inputOutputStream.saveFile(Constants.dirMetadata, Constants.fileMetadata, indexFileName, buffers, redisFile
+                .getFileLength());
+        RedisDirectory.getFilesMap().remove(indexFileName);
+        RedisDirectory.getSizeInBytes().getAndAdd(-redisFile.ramBytesUsed());
         redisFile = null;
     }
 

@@ -196,7 +196,7 @@ public class TestLucene {
         ShardedJedisPool shardedJedisPool = new ShardedJedisPool(jedisPoolConfig, shards);
         RedisDirectory redisDirectory = new RedisDirectory(new ShardedJedisPoolStream(shardedJedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 50000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();

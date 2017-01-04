@@ -44,8 +44,9 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
     private InputOutputStream inputOutputStream;
     @Getter
     //key is index file name
-    protected static volatile Map<String, RedisFile> filesMap = new ConcurrentHashMap<>();
-    protected final AtomicLong sizeInBytes = new AtomicLong();
+    private static volatile Map<String, RedisFile> filesMap = new ConcurrentHashMap<>();
+    @Getter
+    private static final AtomicLong sizeInBytes = new AtomicLong();
 
     private RedisDirectory() throws IOException {
         super(new RedisLockFactory());
@@ -144,8 +145,7 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
         //从redis中load文件到redis file对象中
         //单例Jedis有一个坑，就是在同一时刻只能被一个线程持有，在openInput方法中，Lucene会有Read操作和Merge操作，而其由不同的线程完成，所以如果在
         //loadRedisToFile中出现不同线程在瞬时同时持有Jedis对象会一直报错Socket Closed
-        RedisFile redisFile = loadRedisToFile(name);
-        return new RedisInputStream(name, redisFile);
+        return new RedisInputStream(name, loadRedisToFile(name));
     }
 
     private RedisFile loadRedisToFile(String fileName) {
@@ -153,10 +153,8 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
         long lenght = Longs.fromByteArray(hget);
         RedisFile redisFile = new RedisFile(fileName, lenght);
         long blockSize = getBlockSize(lenght);
-        for (int i = 0; i < blockSize; i++) {
-            byte[] values = inputOutputStream.hget(Constants.fileMetadataBytes, getBlockName(fileName, i));
-            redisFile.buffers.add(values);
-        }
+        List<byte[]> bytes = inputOutputStream.loadFileOnce(Constants.fileMetadata, fileName, blockSize);
+        redisFile.setBuffers(bytes);
         return redisFile;
     }
 
