@@ -63,7 +63,7 @@ public class TestLucene {
                 .OpenMode.CREATE);
         RAMDirectory ramDirectory = new RAMDirectory();
         IndexWriter indexWriter = new IndexWriter(ramDirectory, indexWriterConfig);
-        for (int i = 0; i < 5000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -73,7 +73,7 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(ramDirectory));
         int total = 0;
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -151,7 +151,7 @@ public class TestLucene {
         JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, Constants.TIME_OUT);
         RedisDirectory redisDirectory = new RedisDirectory(new JedisPoolStream(jedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 5000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -163,7 +163,7 @@ public class TestLucene {
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
                 6379))));
         int total = 0;
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -238,7 +238,7 @@ public class TestLucene {
         //10s超时时间
         RedisDirectory redisDirectory = new RedisDirectory(new JedisStream("localhost", 6379));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
-        for (int i = 0; i < 5000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -250,7 +250,7 @@ public class TestLucene {
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(new RedisDirectory(new JedisStream("localhost",
                 6379))));
         int total = 0;
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
@@ -260,13 +260,14 @@ public class TestLucene {
         log.error("RedisDirectoryWithJedis search consumes {}ms!", (end - start));
     }
 
+
     public void testMMapDirectory() throws IOException {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
         FSDirectory open = FSDirectory.open(Paths.get("E:/testlucene"));
         IndexWriter indexWriter = new IndexWriter(open, indexWriterConfig);
-        for (int i = 0; i < 5000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             indexWriter.addDocument(addDocument(i));
         }
         indexWriter.commit();
@@ -276,7 +277,7 @@ public class TestLucene {
         start = System.currentTimeMillis();
         IndexSearcher indexSearcher = new IndexSearcher(DirectoryReader.open(open));
         int total = 0;
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             TermQuery key1 = new TermQuery(new Term("key1", "key" + i));
             TopDocs search = indexSearcher.search(key1, 10);
             total += search.totalHits;
