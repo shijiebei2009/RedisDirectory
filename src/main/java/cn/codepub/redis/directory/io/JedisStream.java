@@ -35,7 +35,7 @@ import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
 public class JedisStream implements InputOutputStream {
     private String IP;
     private int port;
-    private int timeout = Constants.timeOut;
+    private int timeout = Constants.TIME_OUT;
 
     private Jedis openJedis() {
         return new Jedis(IP, port, this.timeout);
@@ -159,9 +159,17 @@ public class JedisStream implements InputOutputStream {
         Pipeline pipelined = jedis.pipelined();
         List<byte[]> res = new ArrayList<>();
         List<Response<byte[]>> temps = new ArrayList<>();
-        for (int i = 0; i < blockSize; i++) {
-            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
+        int temp = 0;
+        while (temp < blockSize) {
+            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, temp));
             temps.add(data);
+            if (temp % Constants.SYNC_COUNT == 0) {
+                pipelined.sync();
+                res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+                temps.clear();
+                pipelined = jedis.pipelined();
+            }
+            temp++;
         }
         try {
             pipelined.sync();

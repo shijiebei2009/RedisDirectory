@@ -1,5 +1,6 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.utils.Constants;
 import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import redis.clients.jedis.Jedis;
@@ -185,9 +186,17 @@ public class JedisPoolStream implements InputOutputStream {
         Pipeline pipelined = jedis.pipelined();
         List<byte[]> res = new ArrayList<>();
         List<Response<byte[]>> temps = new ArrayList<>();
-        for (int i = 0; i < blockSize; i++) {
-            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
+        int temp = 0;
+        while (temp < blockSize) {
+            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, temp));
             temps.add(data);
+            if (temp % Constants.SYNC_COUNT == 0) {
+                pipelined.sync();
+                res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+                pipelined = jedis.pipelined();
+                temps.clear();
+            }
+            temp++;
         }
         try {
             pipelined.sync();

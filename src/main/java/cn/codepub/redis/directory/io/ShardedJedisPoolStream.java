@@ -1,5 +1,6 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.utils.Constants;
 import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import redis.clients.jedis.Response;
@@ -160,9 +161,18 @@ public class ShardedJedisPoolStream implements InputOutputStream {
         ShardedJedisPipeline pipelined = shardedJedis.pipelined();
         List<byte[]> res = new ArrayList<>();
         List<Response<byte[]>> temps = new ArrayList<>();
-        for (int i = 0; i < blockSize; i++) {
-            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, i));
+        int temp = 0;
+        //如果不分批次sync容易read time out和Java heap space
+        while (temp < blockSize) {
+            Response<byte[]> data = pipelined.hget(fileDataKey.getBytes(), getBlockName(fileName, temp));
             temps.add(data);
+            if (temp % Constants.SYNC_COUNT == 0) {
+                pipelined.sync();
+                res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+                temps.clear();
+                pipelined = shardedJedis.pipelined();
+            }
+            temp++;
         }
         try {
             pipelined.sync();

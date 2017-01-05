@@ -1,8 +1,12 @@
+import com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile
+
 group 'cn.codepub'
 version '0.0.1'
 apply plugin: 'java'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+String mainClassName = 'cn.codepub.redis.directory.Main'
+
 repositories {
     maven {
         url 'http://repo.apache.maven.org/maven2/'
@@ -15,14 +19,37 @@ repositories {
 dependencies {
     compile 'org.apache.logging.log4j:log4j-core:2.6.2'
     compile 'org.apache.logging.log4j:log4j-api:2.6.2'
-    compile 'junit:junit:4.12'
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'com.google.guava:guava:20.0'
     compile 'org.projectlombok:lombok:1.16.12'
-    compile 'org.apache.lucene:lucene-analyzers-common:5.5.0'
     compile 'org.apache.lucene:lucene-core:5.5.0'
+    compile 'org.apache.lucene:lucene-analyzers-common:5.5.0'
     compile 'org.apache.lucene:lucene-queryparser:5.5.0'
     compile 'redis.clients:jedis:2.9.0'
     compile 'commons-io:commons-io:2.5'
+    compile 'junit:junit:4.12'
+}
+//拷贝依赖jar包到指定目录
+task copyJars(type: Copy) {
+    from configurations.runtime
+    into 'build/dest' // 目标位置
 }
 
+//将依赖jar包添加到manifest文件中
+task addDependToManifest << {
+    if (!configurations.runtime.isEmpty()) {
+        jar.manifest.attributes('Class-Path': configurations.runtime.collect { 'libs/' + it.name }.join(' '))
+    }
+}
+jar.dependsOn += copyJars
+jar.dependsOn += addDependToManifest
+
+jar {
+    manifest {
+        attributes('Main-Class': mainClassName)
+    }
+}
+//设置编码
+tasks.withType(Compile) {
+    options.encoding = "UTF-8"
+}

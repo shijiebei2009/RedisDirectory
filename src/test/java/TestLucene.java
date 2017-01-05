@@ -1,3 +1,5 @@
+
+
 import cn.codepub.redis.directory.RedisDirectory;
 import cn.codepub.redis.directory.io.JedisPoolStream;
 import cn.codepub.redis.directory.io.JedisStream;
@@ -105,7 +107,7 @@ public class TestLucene {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
-        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "10.97.19.55", 6379, Constants.timeOut);
+        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "10.97.19.55", 6379, Constants.TIME_OUT);
         RedisDirectory redisDirectory = new RedisDirectory(new JedisPoolStream(jedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
         for (int i = 0; i < 5000000; i++) {
@@ -146,7 +148,7 @@ public class TestLucene {
         //获取连接等待时间
         //genericObjectPoolConfig.setMaxWaitMillis(3000);
         //10s超时时间
-        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, Constants.timeOut);
+        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, Constants.TIME_OUT);
         RedisDirectory redisDirectory = new RedisDirectory(new JedisPoolStream(jedisPool));
         IndexWriter indexWriter = new IndexWriter(redisDirectory, indexWriterConfig);
         for (int i = 0; i < 5000000; i++) {
@@ -188,7 +190,7 @@ public class TestLucene {
         //genericObjectPoolConfig.setMaxWaitMillis(3000);
         //10s超时时间
         List<JedisShardInfo> shards = new ArrayList<>();
-        JedisShardInfo si = new JedisShardInfo("localhost", 6379, Constants.timeOut);
+        JedisShardInfo si = new JedisShardInfo("localhost", 6379, Constants.TIME_OUT);
         //JedisShardInfo si2 = new JedisShardInfo("localhost", 6380);
         shards.add(si);
         //shards.add(si2);
