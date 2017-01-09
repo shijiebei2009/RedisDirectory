@@ -16,6 +16,7 @@ Requirements
 * Lombok 1.16.12+
 * Log4j 2.6.2+
 * Guava 20.0+
+* snappy-java 1.1.2.6+
 
 Installation
 ------------

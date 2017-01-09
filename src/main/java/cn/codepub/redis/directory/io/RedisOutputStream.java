@@ -2,7 +2,7 @@ package cn.codepub.redis.directory.io;
 
 import cn.codepub.redis.directory.RedisDirectory;
 import cn.codepub.redis.directory.RedisFile;
-import cn.codepub.redis.directory.utils.Constants;
+import cn.codepub.redis.directory.util.Constants;
 import lombok.extern.log4j.Log4j2;
 import org.apache.lucene.store.BufferedChecksum;
 import org.apache.lucene.store.IndexOutput;
@@ -70,7 +70,7 @@ public class RedisOutputStream extends IndexOutput {
         //先flush刷新索引文件长度
         setFileLength();
         List<byte[]> buffers = redisFile.getBuffers();
-        inputOutputStream.saveFile(Constants.dirMetadata, Constants.fileMetadata, indexFileName, buffers, redisFile
+        inputOutputStream.saveFile(Constants.DIRECTORY_METADATA, Constants.FILE_METADATA, indexFileName, buffers, redisFile
                 .getFileLength());
         RedisDirectory.getFilesMap().remove(indexFileName);
         RedisDirectory.getSizeInBytes().getAndAdd(-redisFile.ramBytesUsed());

@@ -3,7 +3,7 @@ package cn.codepub.redis.directory;
 import cn.codepub.redis.directory.io.InputOutputStream;
 import cn.codepub.redis.directory.io.RedisInputStream;
 import cn.codepub.redis.directory.io.RedisOutputStream;
-import cn.codepub.redis.directory.utils.Constants;
+import cn.codepub.redis.directory.util.Constants;
 import com.google.common.primitives.Longs;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
@@ -20,8 +20,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockName;
-import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
+import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockName;
+import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockSize;
 
 
 /**
@@ -64,14 +64,14 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
     public final String[] listAll() {
         ensureOpen();
         //directory->fileNames->fileLength，由fileLength%BLOCK_SIZE==0?fileLength/BLOCK_SIZE:fileLength/BLOCK_SIZE+1得到fileBlockSizes
-        return inputOutputStream.getAllFileNames(Constants.dirMetadata);
+        return inputOutputStream.getAllFileNames(Constants.DIRECTORY_METADATA);
     }
 
     /**
      * Returns true iff the named file exists in this directory.
      */
     private boolean fileNameExists(String fileName) {
-        return inputOutputStream.hexists(Constants.dirMetadataBytes, fileName.getBytes());
+        return inputOutputStream.hexists(Constants.DIR_METADATA_BYTES, fileName.getBytes());
     }
 
     /**
@@ -83,7 +83,7 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
     public final long fileLength(String name) throws IOException {
         ensureOpen();
         long current = 0;
-        byte[] b = inputOutputStream.hget(Constants.dirMetadataBytes, name.getBytes());
+        byte[] b = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, name.getBytes());
         if (b != null) {
             current = Longs.fromByteArray(b);
         }
@@ -95,10 +95,10 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
         ensureOpen();
         boolean b = fileNameExists(name);
         if (b) {
-            byte[] hget = inputOutputStream.hget(Constants.dirMetadataBytes, name.getBytes());
+            byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, name.getBytes());
             long length = Longs.fromByteArray(hget);
             long blockSize = getBlockSize(length);
-            inputOutputStream.deleteFile(Constants.dirMetadata, Constants.fileMetadata, name, blockSize);
+            inputOutputStream.deleteFile(Constants.DIRECTORY_METADATA, Constants.FILE_METADATA, name, blockSize);
         } else {
             log.error("Delete file {} does not exists!", name);
         }
@@ -124,15 +124,15 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
         //在get的时候不需要加事务
         //在删除和添加的时候使用事务
         //Get the file length with old file name
-        byte[] hget = inputOutputStream.hget(Constants.dirMetadataBytes, source.getBytes());
+        byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, source.getBytes());
         long length = Longs.fromByteArray(hget);
         long blockSize = getBlockSize(length);
         for (int i = 0; i < blockSize; i++) {
             //Get the contents with old file name
-            byte[] res = inputOutputStream.hget(Constants.fileMetadataBytes, getBlockName(source, i));
+            byte[] res = inputOutputStream.hget(Constants.FILE_METADATA_BYTES, getBlockName(source, i));
             values.add(res);
         }
-        inputOutputStream.rename(Constants.dirMetadata, Constants.fileMetadata, source, dest, values, length);
+        inputOutputStream.rename(Constants.DIRECTORY_METADATA, Constants.FILE_METADATA, source, dest, values, length);
         log.debug("Rename file success from {} to {}", source, dest);
     }
 
@@ -149,11 +149,11 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
     }
 
     private RedisFile loadRedisToFile(String fileName) {
-        byte[] hget = inputOutputStream.hget(Constants.dirMetadataBytes, fileName.getBytes());
+        byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, fileName.getBytes());
         long lenght = Longs.fromByteArray(hget);
         RedisFile redisFile = new RedisFile(fileName, lenght);
         long blockSize = getBlockSize(lenght);
-        List<byte[]> bytes = inputOutputStream.loadFileOnce(Constants.fileMetadata, fileName, blockSize);
+        List<byte[]> bytes = inputOutputStream.loadFileOnce(Constants.FILE_METADATA, fileName, blockSize);
         redisFile.setBuffers(bytes);
         return redisFile;
     }

@@ -1,10 +1,8 @@
-
-
 import cn.codepub.redis.directory.RedisDirectory;
 import cn.codepub.redis.directory.io.JedisPoolStream;
 import cn.codepub.redis.directory.io.JedisStream;
 import cn.codepub.redis.directory.io.ShardedJedisPoolStream;
-import cn.codepub.redis.directory.utils.Constants;
+import cn.codepub.redis.directory.util.Constants;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;

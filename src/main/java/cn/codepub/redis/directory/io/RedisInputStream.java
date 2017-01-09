@@ -1,7 +1,7 @@
 package cn.codepub.redis.directory.io;
 
 import cn.codepub.redis.directory.RedisFile;
-import cn.codepub.redis.directory.utils.Constants;
+import cn.codepub.redis.directory.util.Constants;
 import lombok.extern.log4j.Log4j2;
 import org.apache.lucene.store.IndexInput;
 

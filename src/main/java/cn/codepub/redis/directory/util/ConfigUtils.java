@@ -1,4 +1,4 @@
-package cn.codepub.redis.directory.utils;
+package cn.codepub.redis.directory.util;
 
 import com.google.common.base.Strings;
 import lombok.extern.log4j.Log4j2;

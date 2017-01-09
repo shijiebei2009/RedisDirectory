@@ -1,6 +1,6 @@
 package cn.codepub.redis.directory;
 
-import cn.codepub.redis.directory.utils.Constants;
+import cn.codepub.redis.directory.util.Constants;
 import lombok.NonNull;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.IOUtils;
@@ -45,7 +45,7 @@ import java.util.Set;
 @Log4j2
 public class RedisLockFactory extends LockFactory {
     private static final Set<String> LOCK_HELD = Collections.synchronizedSet(new HashSet<String>());
-    private final Path lockFileDirectory = Paths.get(Constants.lockFilePath); // The underlying filesystem directory
+    private final Path lockFileDirectory = Paths.get(Constants.LOCK_FILE_PATH); // The underlying filesystem directory
 
     RedisLockFactory() throws IOException {
         if (!Files.isDirectory(this.lockFileDirectory)) {

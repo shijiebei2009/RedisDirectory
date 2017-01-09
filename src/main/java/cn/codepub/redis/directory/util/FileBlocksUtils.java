@@ -1,4 +1,4 @@
-package cn.codepub.redis.directory.utils;
+package cn.codepub.redis.directory.util;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -17,7 +17,7 @@ import lombok.extern.log4j.Log4j2;
  * Licence: Apache v2 License
  */
 @Log4j2
-public class FileBlocksUtil {
+public class FileBlocksUtils {
     public static byte[] getBlockName(String fileName, int i) {
         return String.format("@%s:%s", fileName, i).getBytes();
     }

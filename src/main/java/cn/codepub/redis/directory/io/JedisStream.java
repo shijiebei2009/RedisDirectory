@@ -1,6 +1,6 @@
 package cn.codepub.redis.directory.io;
 
-import cn.codepub.redis.directory.utils.Constants;
+import cn.codepub.redis.directory.util.Constants;
 import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
 import redis.clients.jedis.Jedis;
@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockName;
-import static cn.codepub.redis.directory.utils.FileBlocksUtil.getBlockSize;
+import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockName;
+import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockSize;
+
 
 /**
  * <p>

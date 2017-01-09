@@ -1,4 +1,4 @@
-package cn.codepub.redis.directory.utils;
+package cn.codepub.redis.directory.util;
 
 /**
  * <p>
