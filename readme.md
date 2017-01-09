@@ -98,9 +98,9 @@ TODO
 I've just started. Have to:
 
 - [x] Include support for Snappy compression to compress file block.
-- [] Rock solid JUNIT test cases for each class.
-- [] Enable atomic operations on RedisFile, this will allow multiple connections to manipulate single file.
-- [] Redundancy support, maintain multiple copies of a file (or its blocks).
+- [ ] Rock solid JUNIT test cases for each class.
+- [ ] Enable atomic operations on RedisFile, this will allow multiple connections to manipulate single file.
+- [ ] Redundancy support, maintain multiple copies of a file (or its blocks).
 
 ## Simple Performance Test ( Windows 7, i7 4790CPU, 8GB, Redis-x64-3.2 )
 On my computer with windows redis downloaded from [here](https://github.com/MSOpenTech/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip)
