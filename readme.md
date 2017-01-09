@@ -120,8 +120,8 @@ The above test did not compress the index file. You can customise the compress i
 Under normal circumstances, in the local machine test, compressed file performance is not as good as uncompressed file performance.
 
 ## Related Project
-- https://github.com/maxpert/RedisDirectory
-- https://github.com/DDTH/redir
+- [maxpert/RedisDirectory](https://github.com/maxpert/RedisDirectory)
+- [DDTH/redir](https://github.com/DDTH/redir)
 
 ## License
 
