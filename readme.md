@@ -4,8 +4,12 @@ A simple redis storage engine for lucene
 ========================================
 
 _The repo is just a very simple implements for store lucene's index files in redis. I initially did this project is aims to be usable in production_.
-It's a complete concise implementation, you can use a different jedis implements (jedis/jedis pool/sharded jedis pool/jedis cluster) without modifying the code. It supports index file slice, mutex lock and redis file cache. With redis file cache it can help you improve the performance of writing index files. In this repo the lock implements by java nio file lock, it can release lock when jvm exit abnormal.
-If you use a singleton lock, then you can not achieve mutual exclusion across multi processes, or else if you use redis to store a flag as lock, then the flag will still store in redis when the java virtual machine exit abnormal. And when you use next time, you can not obtain lock again unless you delete the lock flag in the redis manual.
+It's a complete concise implementation, you can use a different jedis implements (jedis/jedis pool/sharded jedis pool/jedis cluster) without modifying
+the code. It supports index file slice, compress index file contents, mutex lock and redis file cache. With redis file cache it can help you improve
+the performance of writing index files. In this repo the lock implements by java nio file lock, it can release lock when jvm exit abnormal. If you use
+a singleton lock, then you can not achieve mutual exclusion across multi processes, or else if you use redis to store a flag as lock, then the flag
+will still store in redis when the java virtual machine exit abnormal. And when you use next time, you can not obtain lock again unless you delete the
+lock flag in the redis manual.
 
 Requirements
 ------------
@@ -36,7 +40,8 @@ Features
 Usage
 -----
 
-Make sure you have the RedisDirectory.jar in you class path (Gradle or Maven can help you). To use it just like follows, you can set `stop-writes-on-bgsave-error no` in the redis.windows.conf if it occurs **MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk. Commands that may modify the data set are disabled. Please check Redis logs for details about the error.**
+Make sure you have the RedisDirectory.jar in you class path (Gradle or Maven can help you). To use it just like follows, you can set `stop-writes-on-bgsave-error no`
+in the redis.windows.conf if it occurs **MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk. Commands that may modify the data set are disabled. Please check Redis logs for details about the error.**
 
 JedisPool
 
@@ -80,7 +85,8 @@ indexWriter.close();
 redisDirectory.close();
 ```
 
-File is divided into blocks and stored as HASH in redis in binary format that can be loaded on demand. You can customise the block size by modifying the DEFAULT_BUFFER_SIZE in config file. *Remember its a 1 time intialization once index is created on a particular size it can't be changed; higher block size causes lower fragmentation*.
+File is divided into blocks and stored as HASH in redis in binary format that can be loaded on demand. You can customise the block size by modifying
+the DEFAULT_BUFFER_SIZE in config file. *Remember its a 1 time intialization once index is created on a particular size it can't be changed; higher block size causes lower fragmentation*.
 
 The index files will store in redis as follows:<br/>
 directory metadata (user definition) => index file name => index file length<br/>
@@ -91,25 +97,31 @@ TODO
 
 I've just started. Have to:
 
-*   Include support for Snappy compression to compress file block.
-*   Rock solid JUNIT test cases for each class.
-*   Enable atomic operations on RedisFile, this will allow multiple connections to manipulate single file.
-*   Redundancy support, maintain multiple copies of a file (or its blocks).
+- [x] Include support for Snappy compression to compress file block.
+- [] Rock solid JUNIT test cases for each class.
+- [] Enable atomic operations on RedisFile, this will allow multiple connections to manipulate single file.
+- [] Redundancy support, maintain multiple copies of a file (or its blocks).
 
 ## Simple Performance Test ( Windows 7, i7 4790CPU, 8GB, Redis-x64-3.2 )
-On my computer with windows redis downloaded from [here](https://github.com/MSOpenTech/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip) developed by [MSOpenTech](https://github.com/MSOpenTech/redis). In command line, I run RedisDirectory jar file with arguments like this `java -Xms1024m -Xmx5120m -jar RedisDirectory-0.0.1.jar`, and the performance test results are as below. When the redis as the store engine, before the program start I will run `flushall` in redis and after the program done, I get the index size by `info` in redis commands line.
+On my computer with windows redis downloaded from [here](https://github.com/MSOpenTech/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip)
+developed by [MSOpenTech](https://github.com/MSOpenTech/redis). In command line, I run RedisDirectory jar file with arguments like this
+`java -Xms1024m -Xmx5120m -jar RedisDirectory-0.0.1.jar`, and the performance test results are as below. When the redis as the store engine, before the
+program start I will run `flushall` in redis and after the program done, I get the index size by `info` in redis commands line.
 
-|Type|Documents|Fields|Write Time |Search Time(10 million)|Index Size|Compress|
-|---|---|---|---|---|---|---|
-|RamDirectory|10 million|15|303s|278s|2.63G(Approximately)|Not Support|
-|MMapDirectory|10 million|15|381s|307s|2.59G|Not Support|
-|RedisDirectory (JedisPool)|10 million|15|423s|632s|used_memory_human:2.67G|NO|
-|RedisDirectory (Jedis)|10 million|15|452s|536s|used_memory_human:2.67G|NO|
-|RedisDirectory (ShardedJedisPool)|10 million|15|477s|790s|used_memory_human:2.67G|NO|
+|Type|Documents|Fields|Write Time |Search Time(10 million)|Index Size|
+|---|---|---|---|---|---|
+|RamDirectory|10 million|15|303s|278s|2.63G(Approximately)|
+|MMapDirectory|10 million|15|381s|307s|2.59G|
+|RedisDirectory (JedisPool)|10 million|15|423s|632s|used_memory_human:2.67G|
+|RedisDirectory (Jedis)|10 million|15|452s|536s|used_memory_human:2.67G|
+|RedisDirectory (ShardedJedisPool)|10 million|15|477s|790s|used_memory_human:2.67G|
+
+The above test did not compress the index file. You can customise the compress index file or not by modifying `COMPRESS_FILE=false` in config file.
+Under normal circumstances, in the local machine test, compressed file performance is not as good as uncompressed file performance.
 
 ## Related Project
-https://github.com/maxpert/RedisDirectory<br/>
-https://github.com/DDTH/redir
+- https://github.com/maxpert/RedisDirectory
+- https://github.com/DDTH/redir
 
 ## License
 
