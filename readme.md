@@ -4,7 +4,7 @@ A simple redis storage engine for lucene
 ========================================
 
 _The repo is just a very simple implements for store lucene's index files in redis. I initially did this project is aims to be usable in production_.
-It's a complete concise implementation, you can use a different jedis implements (jedis/jedis pool/sharded jedis pool/jedis cluster) without modifying
+It's a complete concise implementation, you can use a different jedis implements (Jedis/Jedis Pool/Sharded Jedis Pool/Jedis Cluster) without modifying
 the code. It supports index file slice, compress index file contents, mutex lock and redis file cache. With redis file cache it can help you improve
 the performance of writing index files. In this repo the lock implements by java nio file lock, it can release lock when jvm exit abnormal. If you use
 a singleton lock, then you can not achieve mutual exclusion across multi processes, or else if you use redis to store a flag as lock, then the flag
@@ -117,7 +117,8 @@ program start I will run `flushall` in redis and after the program done, I get t
 |RedisDirectory (ShardedJedisPool)|10 million|15|477s|790s|used_memory_human:2.67G|
 
 The above test did not compress the index file. You can customise the compress index file or not by modifying `COMPRESS_FILE=false` in config file.
-Under normal circumstances, in the local machine test, compressed file performance is not as good as uncompressed file performance.
+Under normal circumstances, in the local machine test, compressed file performance is not as good as uncompressed file performance. In the 10 million
+of documents test, the compression index file consumes write time about 680s.
 
 ## Related Project
 - [maxpert/RedisDirectory](https://github.com/maxpert/RedisDirectory)
