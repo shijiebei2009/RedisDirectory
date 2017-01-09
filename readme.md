@@ -16,7 +16,7 @@ Requirements
 * Lombok 1.16.12+
 * Log4j 2.6.2+
 * Guava 20.0+
-* snappy-java 1.1.2.6+
+* Snappy-java 1.1.2.6+
 
 Installation
 ------------
@@ -97,15 +97,15 @@ I've just started. Have to:
 *   Redundancy support, maintain multiple copies of a file (or its blocks).
 
 ## Simple Performance Test ( Windows 7, i7 4790CPU, 8GB, Redis-x64-3.2 )
-In command line, I run RedisDirectory jar file with arguments like this `java -Xms1024m -Xmx5120m -jar RedisDirectory-0.0.1.jar`, and the performance test results are as below. When the redis as the store engine, before the program start I will run `flushall` in redis and after the program done, I get the index size by `info` in redis commands line.
+On my computer with windows redis downloaded from [here](https://github.com/MSOpenTech/redis/releases/download/win-3.2.100/Redis-x64-3.2.100.zip) developed by [MSOpenTech](https://github.com/MSOpenTech/redis). In command line, I run RedisDirectory jar file with arguments like this `java -Xms1024m -Xmx5120m -jar RedisDirectory-0.0.1.jar`, and the performance test results are as below. When the redis as the store engine, before the program start I will run `flushall` in redis and after the program done, I get the index size by `info` in redis commands line.
 
-|Type|Documents|Fields|Write Time |Search Time(10 million)|Index Size|
-|---|---|---|---|---|---|
-|RamDirectory|10 million|15|303s|278s|2.63G(Approximately)|
-|MMapDirectory|10 million|15|381s|307s|2.59G|
-|RedisDirectory (Local JedisPool)|10 million|15|423s|632s|used_memory_human:2.67G|
-|RedisDirectory (Local Jedis)|10 million|15|452s|536s|used_memory_human:2.67G|
-|RedisDirectory (Local ShardedJedisPool)|10 million|15|477s|790s|used_memory_human:2.67G|
+|Type|Documents|Fields|Write Time |Search Time(10 million)|Index Size|Compress|
+|---|---|---|---|---|---|---|
+|RamDirectory|10 million|15|303s|278s|2.63G(Approximately)|Not Support|
+|MMapDirectory|10 million|15|381s|307s|2.59G|Not Support|
+|RedisDirectory (JedisPool)|10 million|15|423s|632s|used_memory_human:2.67G|NO|
+|RedisDirectory (Jedis)|10 million|15|452s|536s|used_memory_human:2.67G|NO|
+|RedisDirectory (ShardedJedisPool)|10 million|15|477s|790s|used_memory_human:2.67G|NO|
 
 ## Related Project
 https://github.com/maxpert/RedisDirectory<br/>

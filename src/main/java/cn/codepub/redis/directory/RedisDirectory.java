@@ -20,6 +20,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static cn.codepub.redis.directory.Operations.FILE_DATA;
+import static cn.codepub.redis.directory.Operations.FILE_LENGTH;
 import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockName;
 import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockSize;
 
@@ -83,7 +85,7 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
     public final long fileLength(String name) throws IOException {
         ensureOpen();
         long current = 0;
-        byte[] b = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, name.getBytes());
+        byte[] b = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, name.getBytes(), FILE_LENGTH);
         if (b != null) {
             current = Longs.fromByteArray(b);
         }
@@ -95,7 +97,7 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
         ensureOpen();
         boolean b = fileNameExists(name);
         if (b) {
-            byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, name.getBytes());
+            byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, name.getBytes(), FILE_LENGTH);
             long length = Longs.fromByteArray(hget);
             long blockSize = getBlockSize(length);
             inputOutputStream.deleteFile(Constants.DIRECTORY_METADATA, Constants.FILE_METADATA, name, blockSize);
@@ -124,12 +126,12 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
         //在get的时候不需要加事务
         //在删除和添加的时候使用事务
         //Get the file length with old file name
-        byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, source.getBytes());
+        byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, source.getBytes(), FILE_LENGTH);
         long length = Longs.fromByteArray(hget);
         long blockSize = getBlockSize(length);
         for (int i = 0; i < blockSize; i++) {
             //Get the contents with old file name
-            byte[] res = inputOutputStream.hget(Constants.FILE_METADATA_BYTES, getBlockName(source, i));
+            byte[] res = inputOutputStream.hget(Constants.FILE_METADATA_BYTES, getBlockName(source, i), FILE_DATA);
             values.add(res);
         }
         inputOutputStream.rename(Constants.DIRECTORY_METADATA, Constants.FILE_METADATA, source, dest, values, length);
@@ -149,7 +151,7 @@ public class RedisDirectory extends BaseDirectory implements Accountable {
     }
 
     private RedisFile loadRedisToFile(String fileName) {
-        byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, fileName.getBytes());
+        byte[] hget = inputOutputStream.hget(Constants.DIR_METADATA_BYTES, fileName.getBytes(), FILE_LENGTH);
         long lenght = Longs.fromByteArray(hget);
         RedisFile redisFile = new RedisFile(fileName, lenght);
         long blockSize = getBlockSize(lenght);

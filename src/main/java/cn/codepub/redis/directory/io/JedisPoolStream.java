@@ -1,5 +1,6 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.Operations;
 import cn.codepub.redis.directory.util.Constants;
 import com.google.common.primitives.Longs;
 import lombok.extern.log4j.Log4j2;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static cn.codepub.redis.directory.util.CompressUtils.compressFilter;
+import static cn.codepub.redis.directory.util.CompressUtils.uncompressFilter;
 import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockName;
 import static cn.codepub.redis.directory.util.FileBlocksUtils.getBlockSize;
 
@@ -54,12 +57,15 @@ public class JedisPoolStream implements InputOutputStream {
     }
 
     @Override
-    public byte[] hget(byte[] key, byte[] field) {
+    public byte[] hget(byte[] key, byte[] field, Operations operations) {
         byte[] hget;
         Jedis jedis = null;
         try {
             jedis = jedisPool.getResource();
             hget = jedis.hget(key, field);
+            if (operations == Operations.FILE_DATA) {
+                return uncompressFilter(hget);
+            }
         } finally {
             jedis.close();
         }
@@ -87,11 +93,14 @@ public class JedisPoolStream implements InputOutputStream {
     }
 
     @Override
-    public Long hset(byte[] key, byte[] field, byte[] value) {
+    public Long hset(byte[] key, byte[] field, byte[] value, Operations operations) {
         Long hset;
         Jedis jedis = null;
         try {
             jedis = jedisPool.getResource();
+            if (operations == Operations.FILE_DATA) {
+                value = compressFilter(value);
+            }
             hset = jedis.hset(key, field, value);
         } finally {
             jedis.close();
@@ -153,7 +162,7 @@ public class JedisPoolStream implements InputOutputStream {
             //add new file content
             blockSize = getBlockSize(fileLength);
             for (int i = 0; i < blockSize; i++) {
-                pipelined.hset(fileDataKey.getBytes(), getBlockName(newField, i), values.get(i));
+                pipelined.hset(fileDataKey.getBytes(), getBlockName(newField, i), compressFilter(values.get(i)));
             }
             values.clear();
             pipelined.sync();
@@ -172,7 +181,11 @@ public class JedisPoolStream implements InputOutputStream {
             pipelined.hset(fileLengthKey.getBytes(), fileName.getBytes(), Longs.toByteArray(fileLength));
             Long blockSize = getBlockSize(fileLength);
             for (int i = 0; i < blockSize; i++) {
-                pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), values.get(i));
+                pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), compressFilter(values.get(i)));
+                if (i % Constants.SYNC_COUNT == 0) {
+                    pipelined.sync();
+                    pipelined = jedis.pipelined();
+                }
             }
             values.clear();
             pipelined.sync();
@@ -193,7 +206,7 @@ public class JedisPoolStream implements InputOutputStream {
             temps.add(data);
             if (temp % Constants.SYNC_COUNT == 0) {
                 pipelined.sync();
-                res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+                res.addAll(temps.stream().map(response -> uncompressFilter(response.get())).collect(Collectors.toList()));
                 pipelined = jedis.pipelined();
                 temps.clear();
             }
@@ -207,7 +220,7 @@ public class JedisPoolStream implements InputOutputStream {
         } finally {
             jedis.close();
         }
-        res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+        res.addAll(temps.stream().map(response -> uncompressFilter(response.get())).collect(Collectors.toList()));
         temps.clear();
         return res;
     }

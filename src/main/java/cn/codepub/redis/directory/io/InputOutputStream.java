@@ -1,5 +1,6 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.Operations;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,13 +34,13 @@ public interface InputOutputStream {
      */
     Boolean hexists(final byte[] key, final byte[] field);
 
-    byte[] hget(final byte[] key, final byte[] field);
+    byte[] hget(final byte[] key, final byte[] field, Operations operations);
 
     void close() throws IOException;
 
     Long hdel(final byte[] key, final byte[]... fields);
 
-    Long hset(final byte[] key, final byte[] field, final byte[] value);
+    Long hset(final byte[] key, final byte[] field, final byte[] value, Operations operations);
 
     Set<byte[]> hkeys(final byte[] key);
 

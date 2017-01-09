@@ -1,5 +1,6 @@
 package cn.codepub.redis.directory.io;
 
+import cn.codepub.redis.directory.Operations;
 import cn.codepub.redis.directory.util.CompressUtils;
 import cn.codepub.redis.directory.util.Constants;
 import com.google.common.primitives.Longs;
@@ -56,11 +57,13 @@ public class ShardedJedisPoolStream implements InputOutputStream {
     }
 
     @Override
-    public byte[] hget(byte[] key, byte[] field) {
+    public byte[] hget(byte[] key, byte[] field, Operations operations) {
         ShardedJedis shardedJedis = getShardedJedis();
         byte[] hget = shardedJedis.hget(key, field);
-        hget = CompressUtils.uncompressFilter(hget);
         shardedJedis.close();
+        if (operations == Operations.FILE_DATA) {
+            return CompressUtils.uncompressFilter(hget);
+        }
         return hget;
     }
 
@@ -79,9 +82,12 @@ public class ShardedJedisPoolStream implements InputOutputStream {
     }
 
     @Override
-    public Long hset(byte[] key, byte[] field, byte[] value) {
+    public Long hset(byte[] key, byte[] field, byte[] value, Operations operations) {
         ShardedJedis shardedJedis = getShardedJedis();
-        Long hset = shardedJedis.hset(key, field, compressFilter(value));
+        if (operations == Operations.FILE_DATA) {
+            value = compressFilter(value);
+        }
+        Long hset = shardedJedis.hset(key, field, value);
         shardedJedis.close();
         return hset;
     }
@@ -133,8 +139,7 @@ public class ShardedJedisPoolStream implements InputOutputStream {
         ShardedJedis shardedJedis = getShardedJedis();
         ShardedJedisPipeline pipelined = shardedJedis.pipelined();
         //add new file length
-        pipelined.hset(fileLengthKey.getBytes(), newField.getBytes(), compressFilter(Longs.toByteArray
-                (fileLength)));
+        pipelined.hset(fileLengthKey.getBytes(), newField.getBytes(), Longs.toByteArray(fileLength));
         //add new file content
         Long blockSize = getBlockSize(fileLength);
         for (int i = 0; i < blockSize; i++) {
@@ -150,10 +155,14 @@ public class ShardedJedisPoolStream implements InputOutputStream {
     public void saveFile(String fileLengthKey, String fileDataKey, String fileName, List<byte[]> values, long fileLength) {
         ShardedJedis shardedJedis = getShardedJedis();
         ShardedJedisPipeline pipelined = shardedJedis.pipelined();
-        pipelined.hset(fileLengthKey.getBytes(), fileName.getBytes(), compressFilter(Longs.toByteArray(fileLength)));
+        pipelined.hset(fileLengthKey.getBytes(), fileName.getBytes(), Longs.toByteArray(fileLength));
         Long blockSize = getBlockSize(fileLength);
         for (int i = 0; i < blockSize; i++) {
             pipelined.hset(fileDataKey.getBytes(), getBlockName(fileName, i), compressFilter(values.get(i)));
+            if (i % Constants.SYNC_COUNT == 0) {
+                pipelined.sync();
+                pipelined = shardedJedis.pipelined();
+            }
         }
         pipelined.sync();
         shardedJedis.close();
@@ -173,7 +182,7 @@ public class ShardedJedisPoolStream implements InputOutputStream {
             temps.add(data);
             if (temp % Constants.SYNC_COUNT == 0) {
                 pipelined.sync();
-                res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
+                res.addAll(temps.stream().map(response -> uncompressFilter(response.get())).collect(Collectors.toList()));
                 temps.clear();
                 pipelined = shardedJedis.pipelined();
             }
@@ -187,8 +196,7 @@ public class ShardedJedisPoolStream implements InputOutputStream {
         } finally {
             shardedJedis.close();
         }
-        res.addAll(temps.stream().map(Response::get).collect(Collectors.toList()));
-        res = uncompressFilter(res);
+        res.addAll(temps.stream().map(response -> uncompressFilter(response.get())).collect(Collectors.toList()));
         temps.clear();
         return res;
     }

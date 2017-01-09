@@ -47,9 +47,9 @@ import java.util.concurrent.ExecutionException;
 public class TestLucene {
     public static void main(String[] args) throws ExecutionException, IOException, InterruptedException {
         //"10.97.19.55"
-        new TestLucene().testRedisDirectoryWithShardedJedisPool();
+        //new TestLucene().testRedisDirectoryWithShardedJedisPool();
         //new TestLucene().testRedisDirectoryWithJedis();
-        //new TestLucene().testRedisDirectoryWithJedisPool();
+        new TestLucene().testRedisDirectoryWithJedisPool();
         //new TestLucene().testRamDirectory();
         //new TestLucene().testMMapDirectory();
         //new TestLucene().testRedisDirectoryWithRemoteJedisPool();

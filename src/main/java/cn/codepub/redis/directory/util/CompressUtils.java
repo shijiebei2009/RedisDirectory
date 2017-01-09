@@ -4,8 +4,6 @@ import lombok.extern.log4j.Log4j2;
 import org.xerial.snappy.Snappy;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -43,10 +41,5 @@ public class CompressUtils {
             }
         }
         return datas;
-    }
-
-    public static List<byte[]> uncompressFilter(List<byte[]> values) {
-        List<byte[]> res = values.stream().map(CompressUtils::uncompressFilter).collect(Collectors.toList());
-        return res;
     }
 }
