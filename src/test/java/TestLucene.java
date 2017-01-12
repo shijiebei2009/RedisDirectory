@@ -101,7 +101,8 @@ public class TestLucene {
         return document;
     }
 
-    public void testRedisDirectoryWithRemoteJedisPool() throws IOException {
+    public void
+    testRedisDirectoryWithRemoteJedisPool() throws IOException {
         long start = System.currentTimeMillis();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new WhitespaceAnalyzer()).setOpenMode(IndexWriterConfig
                 .OpenMode.CREATE);
