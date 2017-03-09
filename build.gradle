@@ -3,6 +3,7 @@ import com.sun.org.apache.xalan.internal.xsltc.cmdline.Compile
 group 'cn.codepub'
 version '0.0.1'
 apply plugin: 'java'
+apply plugin: 'idea'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 String mainClassName = 'cn.codepub.redis.directory.Main'
@@ -17,9 +18,9 @@ repositories {
 }
 
 dependencies {
-    compile 'org.apache.logging.log4j:log4j-core:2.6.2'
-    compile 'org.apache.logging.log4j:log4j-api:2.6.2'
-    compile 'org.apache.commons:commons-lang3:3.4'
+    compile 'org.apache.logging.log4j:log4j-core:2.7'
+    compile 'org.apache.logging.log4j:log4j-api:2.7'
+    compile 'org.apache.commons:commons-lang3:3.5'
     compile 'com.google.guava:guava:20.0'
     compile 'org.projectlombok:lombok:1.16.12'
     compile 'org.apache.lucene:lucene-core:5.5.0'
