@@ -120,6 +120,9 @@ The above test did not compress the index file. You can customise the compress i
 Under normal circumstances, in the local machine test, compressed file performance is not as good as uncompressed file performance. In the 10 million
 of documents test, the compression index file consumes write time about 680s.
 
+## RedisDirectory Architecture
+https://github.com/shijiebei2009/RedisDirectory/blob/master/RedisDirectory_Architecture.png
+
 ## Related Project
 - [maxpert/RedisDirectory](https://github.com/maxpert/RedisDirectory)
 - [DDTH/redir](https://github.com/DDTH/redir)
