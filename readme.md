@@ -121,7 +121,7 @@ Under normal circumstances, in the local machine test, compressed file performan
 of documents test, the compression index file consumes write time about 680s.
 
 ## RedisDirectory Architecture
-https://github.com/shijiebei2009/RedisDirectory/blob/master/RedisDirectory_Architecture.png
+![RedisDirectory Architecture](RedisDirectory_Architecture.png)
 
 ## Related Project
 - [maxpert/RedisDirectory](https://github.com/maxpert/RedisDirectory)
